@@ -5,11 +5,13 @@ const submitButton = commandForm.querySelector('button[type="submit"]');
 const quickActions = document.getElementById("quick-actions");
 const actionLinks = document.getElementById("action-links");
 const highlight = document.getElementById("highlight");
+const commandMode = document.getElementById("command-mode");
 const linksPanel = document.getElementById("links-panel");
 const settingsToggle = document.getElementById("settings-toggle");
 const settingsPanel = document.getElementById("settings-panel");
 const settingsClose = document.getElementById("settings-close");
 const settingsDarkMode = document.getElementById("setting-dark-mode");
+const settingsUiSound = document.getElementById("setting-ui-sound");
 const settingsAmazon = document.getElementById("setting-auto-open-amazon");
 const settingsUrl = document.getElementById("setting-auto-open-url");
 const settingsActionFeed = document.getElementById("setting-show-action-feed");
@@ -18,6 +20,7 @@ const SETTINGS_KEY = "jarvis-ui-settings";
 
 const defaultSettings = {
   darkMode: true,
+  uiSound: false,
   autoOpenAmazonLinks: false,
   autoOpenUrlLinks: true,
   showActionFeed: true,
@@ -33,7 +36,21 @@ const statusFields = {
   result: document.getElementById("status-result"),
 };
 
+const moduleElements = {
+  time: document.getElementById("module-time"),
+  calc: document.getElementById("module-calc"),
+  amazon: document.getElementById("module-amazon"),
+  core: document.getElementById("module-core"),
+};
+
+const historyState = {
+  entries: [],
+  index: -1,
+  draft: "",
+};
+
 let latestNotification = null;
+let audioContext = null;
 let uiSettings = loadSettings();
 
 function loadSettings() {
@@ -55,6 +72,7 @@ function applyTheme() {
 
 function syncSettingsUi() {
   settingsDarkMode.checked = uiSettings.darkMode;
+  settingsUiSound.checked = uiSettings.uiSound;
   settingsAmazon.checked = uiSettings.autoOpenAmazonLinks;
   settingsUrl.checked = uiSettings.autoOpenUrlLinks;
   settingsActionFeed.checked = uiSettings.showActionFeed;
@@ -105,50 +123,86 @@ function createMessageActions(links) {
   return actions;
 }
 
-function createResponseBody(response) {
-  const wrapper = document.createElement("div");
-  wrapper.className = `message-body message-body-${response.type}`;
+function createCursor() {
+  const cursor = document.createElement("span");
+  cursor.className = "type-cursor";
+  cursor.textContent = "|";
+  cursor.setAttribute("aria-hidden", "true");
+  return cursor;
+}
 
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function typeIntoElement(element, text, speed = 10) {
+  const cursor = createCursor();
+  element.appendChild(cursor);
+
+  for (const character of text) {
+    cursor.before(character);
+    scrollChatToBottom();
+    await wait(speed);
+  }
+
+  cursor.remove();
+}
+
+async function renderResponseContent(wrapper, response, shouldType) {
   if (response.content) {
     const paragraph = document.createElement("p");
-    paragraph.textContent = response.content;
     wrapper.appendChild(paragraph);
+
+    if (shouldType) {
+      await typeIntoElement(paragraph, response.content, response.type === "error" ? 12 : 9);
+    } else {
+      paragraph.textContent = response.content;
+    }
   }
 
   if (response.type === "list" && response.items.length) {
     const list = document.createElement("ul");
     list.className = "message-list";
-
-    response.items.forEach((item) => {
-      const listItem = document.createElement("li");
-      listItem.textContent = item;
-      list.appendChild(listItem);
-    });
-
     wrapper.appendChild(list);
-  }
 
-  return wrapper;
+    for (const item of response.items) {
+      const listItem = document.createElement("li");
+      list.appendChild(listItem);
+
+      if (shouldType) {
+        await typeIntoElement(listItem, item, 6);
+        await wait(30);
+      } else {
+        listItem.textContent = item;
+      }
+    }
+  }
 }
 
-function addMessage(role, payload, links = []) {
+async function addMessage(role, payload, links = [], options = {}) {
   const response = normalizeResponsePayload(payload);
   const entry = document.createElement("article");
   entry.className = `message ${role} message-type-${response.type}${response.type === "error" ? " error" : ""}`;
 
   const label = document.createElement("span");
   label.className = "message-label";
-  label.textContent = role === "user" ? "Operator" : "Jarvis";
+  label.textContent = role === "user" ? "Du" : "Jarvis";
+
+  const body = document.createElement("div");
+  body.className = `message-body message-body-${response.type}`;
 
   entry.appendChild(label);
-  entry.appendChild(createResponseBody(response));
+  entry.appendChild(body);
+  chatLog.appendChild(entry);
+  scrollChatToBottom();
+
+  await renderResponseContent(body, response, Boolean(options.typewriter && role === "jarvis"));
 
   const actions = createMessageActions(links);
   if (actions) {
     entry.appendChild(actions);
   }
 
-  chatLog.appendChild(entry);
   scrollChatToBottom();
   return entry;
 }
@@ -163,17 +217,8 @@ function addThinkingIndicator() {
 
   const body = document.createElement("div");
   body.className = "message-body message-body-thinking";
+  body.innerHTML = '<p>Verarbeitung laeuft</p><span class="thinking-dots" aria-hidden="true"><span></span><span></span><span></span></span>';
 
-  const text = document.createElement("p");
-  text.textContent = "Jarvis denkt";
-
-  const dots = document.createElement("span");
-  dots.className = "thinking-dots";
-  dots.setAttribute("aria-hidden", "true");
-  dots.innerHTML = "<span></span><span></span><span></span>";
-
-  body.appendChild(text);
-  body.appendChild(dots);
   entry.appendChild(label);
   entry.appendChild(body);
   chatLog.appendChild(entry);
@@ -187,6 +232,46 @@ function removeElement(element) {
   }
 }
 
+function setModeLabel(mode, isBusy = false) {
+  commandMode.textContent = mode;
+  commandMode.classList.toggle("is-busy", isBusy);
+}
+
+function markModuleState(moduleName, state) {
+  Object.values(moduleElements).forEach((element) => {
+    element.classList.remove("is-active", "is-error", "is-pulse");
+    element.classList.add("is-active");
+  });
+
+  const moduleElement = moduleElements[moduleName] || moduleElements.core;
+
+  if (state === "error") {
+    moduleElement.classList.remove("is-active");
+    moduleElement.classList.add("is-error", "is-pulse");
+    return;
+  }
+
+  moduleElement.classList.add("is-pulse");
+}
+
+function detectModuleName(command, data) {
+  const value = String(command || "").toLowerCase();
+
+  if (/(zeit|uhr|datum|tag)/.test(value)) {
+    return "time";
+  }
+
+  if (/(rechne|berechne|was ist|mal\s+\d|plus\s+\d|minus\s+\d|durch\s+\d|geteilt)/.test(value)) {
+    return "calc";
+  }
+
+  if ((data?.linkType || "") === "amazon" || /(amazon|such|suche|bestell|kauf)/.test(value)) {
+    return "amazon";
+  }
+
+  return "core";
+}
+
 function updateStatus(status) {
   statusFields.time.textContent = status.time;
   statusFields.date.textContent = status.date;
@@ -198,7 +283,7 @@ function updateStatus(status) {
 
   if (status.latestNotification && status.latestNotification !== latestNotification) {
     latestNotification = status.latestNotification;
-    addMessage("jarvis", { type: "text", content: status.latestNotification });
+    void addMessage("jarvis", { type: "text", content: status.latestNotification }, [], { typewriter: true });
   }
 }
 
@@ -271,7 +356,75 @@ async function fetchJson(url, options) {
 function setBusyState(isBusy) {
   commandInput.disabled = isBusy;
   submitButton.disabled = isBusy;
-  submitButton.textContent = isBusy ? "WAIT" : "EXECUTE";
+  submitButton.textContent = isBusy ? "LAEUFT" : "SENDEN";
+  setModeLabel(isBusy ? "AKTIV" : "BEREIT", isBusy);
+}
+
+function rememberCommand(command) {
+  if (!command || historyState.entries[historyState.entries.length - 1] === command) {
+    historyState.index = historyState.entries.length;
+    return;
+  }
+
+  historyState.entries.push(command);
+  historyState.entries = historyState.entries.slice(-30);
+  historyState.index = historyState.entries.length;
+}
+
+function handleHistoryNavigation(direction) {
+  if (!historyState.entries.length) {
+    return;
+  }
+
+  if (historyState.index === historyState.entries.length) {
+    historyState.draft = commandInput.value;
+  }
+
+  historyState.index = Math.max(0, Math.min(historyState.entries.length, historyState.index + direction));
+
+  if (historyState.index === historyState.entries.length) {
+    commandInput.value = historyState.draft;
+    return;
+  }
+
+  commandInput.value = historyState.entries[historyState.index];
+}
+
+function ensureAudioContext() {
+  if (!audioContext) {
+    audioContext = new window.AudioContext();
+  }
+
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+}
+
+function playUiBeep() {
+  if (!uiSettings.uiSound || !window.AudioContext) {
+    return;
+  }
+
+  try {
+    ensureAudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.type = "triangle";
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(660, audioContext.currentTime + 0.09);
+
+    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.04, audioContext.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.12);
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.13);
+  } catch {
+    // Audio ist optional und darf das UI nicht stoeren.
+  }
 }
 
 async function submitCommand(command) {
@@ -280,8 +433,10 @@ async function submitCommand(command) {
     return;
   }
 
-  addMessage("user", trimmedCommand);
+  rememberCommand(trimmedCommand);
+  await addMessage("user", trimmedCommand);
   setBusyState(true);
+  markModuleState(detectModuleName(trimmedCommand), "active");
 
   let thinkingIndicator = null;
   const thinkingDelay = 300 + Math.floor(Math.random() * 501);
@@ -298,25 +453,32 @@ async function submitCommand(command) {
       body: JSON.stringify({ message: trimmedCommand }),
     });
 
-    addMessage("jarvis", data.response || data.reply, data.links);
+    window.clearTimeout(thinkingTimeout);
+    removeElement(thinkingIndicator);
+    highlight.textContent = data.highlight;
     updateStatus(data.status);
     renderQuickActions(data.quickActions);
     renderLinks(data.links);
-    highlight.textContent = data.highlight;
+    markModuleState(detectModuleName(trimmedCommand, data), data.response?.type === "error" ? "error" : "active");
+    await addMessage("jarvis", data.response || data.reply, data.links, { typewriter: true });
+    playUiBeep();
 
     if (shouldAutoOpenLinks(data)) {
       tryOpenLinks(data.links);
     }
   } catch (error) {
     console.error(error);
-    addMessage("jarvis", {
-      type: "error",
-      content: "Das hat gerade nicht geklappt. Versuch es bitte noch einmal anders.",
-    });
-  } finally {
     window.clearTimeout(thinkingTimeout);
     removeElement(thinkingIndicator);
+    highlight.textContent = "Eingabe konnte nicht verarbeitet werden";
+    markModuleState(detectModuleName(trimmedCommand), "error");
+    await addMessage("jarvis", {
+      type: "error",
+      content: "Das hat gerade nicht geklappt. Versuch es bitte noch einmal anders.",
+    }, [], { typewriter: true });
+  } finally {
     setBusyState(false);
+    historyState.index = historyState.entries.length;
     commandInput.focus();
   }
 }
@@ -326,6 +488,18 @@ commandForm.addEventListener("submit", async (event) => {
   const command = commandInput.value;
   commandInput.value = "";
   await submitCommand(command);
+});
+
+commandInput.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    handleHistoryNavigation(-1);
+  }
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    handleHistoryNavigation(1);
+  }
 });
 
 settingsToggle.addEventListener("click", () => {
@@ -339,6 +513,14 @@ settingsClose.addEventListener("click", () => {
 settingsDarkMode.addEventListener("change", () => {
   uiSettings.darkMode = settingsDarkMode.checked;
   applyTheme();
+  saveSettings();
+});
+
+settingsUiSound.addEventListener("change", () => {
+  uiSettings.uiSound = settingsUiSound.checked;
+  if (uiSettings.uiSound) {
+    playUiBeep();
+  }
   saveSettings();
 });
 
@@ -393,7 +575,8 @@ async function bootstrap() {
     renderQuickActions(data.quickActions);
     renderLinks(data.links);
     highlight.textContent = data.highlight;
-    addMessage("jarvis", data.response || "Jarvis online. Gib einen Befehl ein oder nutze die Quick Commands.");
+    setModeLabel("BEREIT");
+    await addMessage("jarvis", data.response || "Jarvis online. Gib einen Befehl ein oder nutze die Quick Commands.", [], { typewriter: true });
 
     tickClock();
     setInterval(tickClock, 1000);
@@ -401,10 +584,11 @@ async function bootstrap() {
     commandInput.focus();
   } catch (error) {
     console.error(error);
-    addMessage("jarvis", {
+    setModeLabel("FEHLER");
+    await addMessage("jarvis", {
       type: "error",
       content: "Die Oberfläche konnte nicht vollständig starten. Lade die Seite bitte neu.",
-    });
+    }, [], { typewriter: true });
   }
 }
 

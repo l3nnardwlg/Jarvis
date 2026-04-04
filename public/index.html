@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Jarvis Control Core</title>
+    <title>Jarvis Control Panel</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <div class="noise"></div>
+    <div class="scanlines"></div>
     <button id="settings-toggle" class="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">
       SETTINGS
     </button>
@@ -15,7 +16,7 @@
     <aside id="settings-panel" class="settings-panel" aria-hidden="true">
       <div class="settings-header">
         <div>
-          <p class="eyebrow">Control Layer</p>
+          <p class="eyebrow">Lokale Steuerung</p>
           <h2>Settings</h2>
         </div>
         <button id="settings-close" class="settings-close" type="button" aria-label="Settings schließen">X</button>
@@ -25,9 +26,17 @@
         <label class="settings-item">
           <div>
             <strong>Dunkles Interface</strong>
-            <p>Schaltet zwischen dunkler Standardansicht und heller Oberfläche um.</p>
+            <p>Schaltet zwischen dunklem Standardmodus und heller Kontrollansicht um.</p>
           </div>
           <input id="setting-dark-mode" type="checkbox" />
+        </label>
+
+        <label class="settings-item">
+          <div>
+            <strong>UI-Sound</strong>
+            <p>Spielt bei Jarvis-Antworten einen kurzen Synth-Beep ab.</p>
+          </div>
+          <input id="setting-ui-sound" type="checkbox" />
         </label>
 
         <label class="settings-item">
@@ -64,103 +73,150 @@
     </aside>
 
     <main class="shell">
-      <section class="hero panel">
-        <div class="hero-copy">
-          <p class="eyebrow">P1 NODE X1</p>
+      <aside class="panel sidebar-panel">
+        <div class="sidebar-brand">
+          <p class="eyebrow">Lokales Bedienfeld</p>
           <h1>JARVIS</h1>
-          <p class="lede"></p>
+          <p class="lede">Lokale Steueroberfläche für Befehle, Status und schnelle Aktionen.</p>
         </div>
-        <div class="hero-grid">
-          <div class="hero-card accent-green">
-            <span>System</span>
-            <strong id="highlight">Boot sequence complete</strong>
-          </div>
-          <div class="hero-card accent-blue">
-            <span>Signal</span>
-            <strong>Encrypted local control</strong>
-          </div>
-          <div class="hero-card accent-amber">
-            <span>Protocol</span>
-            <strong>Manual override ready</strong>
-          </div>
-        </div>
-      </section>
 
-      <section class="hud">
-        <div class="panel status-panel">
-          <div class="panel-header">
-            <h2>Core Status</h2>
-            <span class="live-pill">LIVE</span>
+        <section class="sidebar-block system-block">
+          <div class="block-header">
+            <h2>System Status</h2>
+            <span class="live-pill">AKTIV</span>
           </div>
-          <div class="status-grid">
+          <div class="status-stack">
             <article class="status-card">
+              <span>Highlight</span>
+              <strong id="highlight">Boot sequence complete</strong>
+            </article>
+            <article class="status-card compact">
               <span>Uhrzeit</span>
               <strong id="status-time">--:--:--</strong>
             </article>
-            <article class="status-card">
+            <article class="status-card compact">
               <span>Datum</span>
               <strong id="status-date">Wird geladen</strong>
             </article>
-            <article class="status-card">
-              <span>Licht</span>
-              <strong id="status-light">--</strong>
-            </article>
-            <article class="status-card">
-              <span>Fokus</span>
-              <strong id="status-focus">--</strong>
-            </article>
-            <article class="status-card">
-              <span>Alarm</span>
-              <strong id="status-alarm">--</strong>
-            </article>
-            <article class="status-card">
-              <span>Notiz</span>
-              <strong id="status-note">Keine Daten</strong>
-            </article>
-            <article class="status-card">
+            <article class="status-card compact">
               <span>Letztes Ergebnis</span>
               <strong id="status-result">--</strong>
             </article>
           </div>
+        </section>
+
+        <section class="sidebar-block modules-block">
+          <div class="block-header">
+            <h2>Verfügbare Module</h2>
+            <span class="mono">LOKAL</span>
+          </div>
+          <div class="module-list">
+            <article id="module-time" class="module-card is-active">
+              <span class="module-led" aria-hidden="true"></span>
+              <div>
+                <strong>TIME</strong>
+                <p>Uhrzeit und Datum</p>
+              </div>
+            </article>
+            <article id="module-calc" class="module-card is-active">
+              <span class="module-led" aria-hidden="true"></span>
+              <div>
+                <strong>CALC</strong>
+                <p>Rechnen und Folgeoperationen</p>
+              </div>
+            </article>
+            <article id="module-amazon" class="module-card is-active">
+              <span class="module-led" aria-hidden="true"></span>
+              <div>
+                <strong>AMAZON</strong>
+                <p>Produktsuche und Links</p>
+              </div>
+            </article>
+            <article id="module-core" class="module-card is-active">
+              <span class="module-led" aria-hidden="true"></span>
+              <div>
+                <strong>CORE</strong>
+                <p>Antworten und Eingabesteuerung</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="sidebar-block telemetry-block">
+          <div class="block-header">
+            <h2>Übersicht</h2>
+            <span class="mono">LOCAL</span>
+          </div>
+          <div class="telemetry-grid">
+            <article class="telemetry-card">
+              <span>Licht</span>
+              <strong id="status-light">--</strong>
+            </article>
+            <article class="telemetry-card">
+              <span>Fokus</span>
+              <strong id="status-focus">--</strong>
+            </article>
+            <article class="telemetry-card">
+              <span>Alarm</span>
+              <strong id="status-alarm">--</strong>
+            </article>
+            <article class="telemetry-card">
+              <span>Notiz</span>
+              <strong id="status-note">Keine Daten</strong>
+            </article>
+          </div>
+        </section>
+
+        <section id="links-panel" class="sidebar-block links-panel">
+          <div class="block-header">
+            <h2>Aktionen</h2>
+            <span class="mono">LINKS</span>
+          </div>
+          <div id="action-links" class="action-links">
+            <p class="placeholder">Noch keine externen Aktionen erzeugt.</p>
+          </div>
+        </section>
+      </aside>
+
+      <section class="panel console-panel">
+        <header class="console-header">
+          <div>
+            <p class="eyebrow">Eingabe</p>
+            <h2>Befehle</h2>
+          </div>
+          <div class="console-meta">
+            <span class="mono">LOKAL</span>
+            <span id="command-mode" class="mode-pill">BEREIT</span>
+          </div>
+        </header>
+
+        <div class="terminal-frame">
+          <div id="chat-log" class="chat-log" aria-live="polite"></div>
         </div>
 
-        <div class="panel command-panel">
-          <div class="panel-header">
-            <h2>Command Console</h2>
-            <span class="mono">LOCAL NODE</span>
-          </div>
+        <div class="quick-strip">
+          <p class="mini-label">Schnellaktionen</p>
+          <div id="quick-actions" class="quick-actions"></div>
+        </div>
 
-          <div id="chat-log" class="chat-log" aria-live="polite"></div>
-
-          <form id="command-form" class="command-form">
+        <form id="command-form" class="command-form">
+          <div class="command-input-shell">
+            <span class="command-prompt">&gt;</span>
             <input
               id="command-input"
               name="command"
               type="text"
               autocomplete="off"
-              placeholder="z.B. Wetter in Berlin, Licht an, Speichere Notiz Einkaufsliste"
+              spellcheck="false"
+              placeholder="Befehl eingeben..."
             />
-            <button type="submit">EXECUTE</button>
-          </form>
-
-          <div>
-            <p class="mini-label">Quick Commands</p>
-            <div id="quick-actions" class="quick-actions"></div>
+            <span class="cursor-indicator" aria-hidden="true">|</span>
           </div>
-        </div>
-      </section>
-
-      <section id="links-panel" class="panel links-panel">
-        <div class="panel-header">
-          <h2>Action Feed</h2>
-          <span class="mono">OUTPUT</span>
-        </div>
-        <div id="action-links" class="action-links">
-          <p class="placeholder">Noch keine externen Aktionen erzeugt.</p>
-        </div>
+          <button type="submit">SENDEN</button>
+        </form>
       </section>
     </main>
 
     <script src="/app.js"></script>
   </body>
-  </html>
+</html>

@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
+const { routeWithAI } = require("./lib/ai-router");
 const { loadCommands } = require("./lib/command-loader");
 const { createLogStore } = require("./lib/log-store");
 const { createMemoryStore } = require("./lib/memory-store");
@@ -86,7 +87,8 @@ function finalizeResponse(result) {
 }
 
 async function handleInput(input) {
-  const normalizedInput = normalizeInput(input);
+  const originalInput = String(input || "");
+  const normalizedInput = normalizeInput(originalInput);
   state.lastCommandAt = new Date().toISOString();
 
   if (!normalizedInput) {
@@ -99,20 +101,39 @@ async function handleInput(input) {
     );
   }
 
+  let resolvedInput = originalInput;
+  let resolvedNormalizedInput = normalizedInput;
+  let aiRoute = null;
+
+  try {
+    aiRoute = await routeWithAI(originalInput, commands);
+    resolvedInput = aiRoute.executionInput || originalInput;
+    resolvedNormalizedInput = normalizeInput(resolvedInput);
+  } catch (error) {
+    logs.addEntry({
+      input: originalInput,
+      command: null,
+      outcome: "ai-fallback",
+      detail: error.message,
+    });
+  }
+
   const context = {
-    input: String(input || ""),
-    normalizedInput,
+    input: resolvedInput,
+    originalInput,
+    normalizedInput: resolvedNormalizedInput,
     state,
     memory,
     logs,
     helpers,
     respond,
+    aiRoute,
   };
 
-  const command = findBestCommand(commands, context);
+  const command = aiRoute?.command || findBestCommand(commands, context);
 
   if (!command) {
-    logs.addEntry({ input: String(input || ""), command: null, outcome: "unknown" });
+    logs.addEntry({ input: originalInput, command: null, outcome: "unknown" });
     return finalizeResponse(
       respond.error(
         helpers.pickOne([
@@ -136,18 +157,20 @@ async function handleInput(input) {
       lastCommand: state.context.lastCommand,
     });
     logs.addEntry({
-      input: String(input || ""),
+      input: originalInput,
       command: command.name,
       outcome: "success",
       lastResult: state.context.lastResult,
+      aiRoute: aiRoute ? aiRoute.routeName : null,
     });
     return finalizeResponse(result);
   } catch (error) {
     logs.addEntry({
-      input: String(input || ""),
+      input: originalInput,
       command: command.name,
       outcome: "error",
       detail: error.message,
+      aiRoute: aiRoute ? aiRoute.routeName : null,
     });
     return finalizeResponse(
       respond.error(helpers.pickOne([
