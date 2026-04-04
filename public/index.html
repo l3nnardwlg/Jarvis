@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jarvis Control Core</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <main class="shell">
+      <section class="hero panel">
+        <div class="hero-copy">
+          <p class="eyebrow">P1 NODE X1</p>
+          <h1>JARVIS</h1>
+          <p class="lede"></p>
+        </div>
+        <div class="hero-grid">
+          <div class="hero-card accent-green">
+            <span>System</span>
+            <strong id="highlight">Boot sequence complete</strong>
+          </div>
+          <div class="hero-card accent-blue">
+            <span>Signal</span>
+            <strong>Encrypted local control</strong>
+          </div>
+          <div class="hero-card accent-amber">
+            <span>Protocol</span>
+            <strong>Manual override ready</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="hud">
+        <div class="panel status-panel">
+          <div class="panel-header">
+            <h2>Core Status</h2>
+            <span class="live-pill">LIVE</span>
+          </div>
+          <div class="status-grid">
+            <article class="status-card">
+              <span>Uhrzeit</span>
+              <strong id="status-time">--:--:--</strong>
+            </article>
+            <article class="status-card">
+              <span>Datum</span>
+              <strong id="status-date">Wird geladen</strong>
+            </article>
+            <article class="status-card">
+              <span>Licht</span>
+              <strong id="status-light">--</strong>
+            </article>
+            <article class="status-card">
+              <span>Fokus</span>
+              <strong id="status-focus">--</strong>
+            </article>
+            <article class="status-card">
+              <span>Alarm</span>
+              <strong id="status-alarm">--</strong>
+            </article>
+            <article class="status-card">
+              <span>Notiz</span>
+              <strong id="status-note">Keine Daten</strong>
+            </article>
+          </div>
+        </div>
+
+        <div class="panel command-panel">
+          <div class="panel-header">
+            <h2>Command Console</h2>
+            <span class="mono">LOCAL NODE</span>
+          </div>
+
+          <div id="chat-log" class="chat-log" aria-live="polite"></div>
+
+          <form id="command-form" class="command-form">
+            <input
+              id="command-input"
+              name="command"
+              type="text"
+              autocomplete="off"
+              placeholder="z.B. Wetter in Berlin, Licht an, Speichere Notiz Einkaufsliste"
+            />
+            <button type="submit">EXECUTE</button>
+          </form>
+
+          <div>
+            <p class="mini-label">Quick Commands</p>
+            <div id="quick-actions" class="quick-actions"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel links-panel">
+        <div class="panel-header">
+          <h2>Action Feed</h2>
+          <span class="mono">OUTPUT</span>
+        </div>
+        <div id="action-links" class="action-links">
+          <p class="placeholder">Noch keine externen Aktionen erzeugt.</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+  </html>

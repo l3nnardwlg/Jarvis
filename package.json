@@ -1,0 +1,11 @@
+{
+  "name": "jarvis-home-core",
+  "version": "1.0.0",
+  "description": "Lokale Jarvis-Demo mit Node.js und markanter Weboberflaeche",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "start:sh": "bash start.sh",
+    "start:bat": "start.bat"
+  }
+}

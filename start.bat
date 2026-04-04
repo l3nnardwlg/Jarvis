@@ -1,0 +1,17 @@
+@echo off
+chcp 65001 >nul
+
+echo.
+echo       ██╗ █████╗ ██████╗ ██╗   ██╗██╗███████╗
+echo       ██║██╔══██╗██╔══██╗██║   ██║██║██╔════╝
+echo       ██║███████║██████╔╝██║   ██║██║███████╗
+echo  ██   ██║██╔══██║██╔══██╗ ██╗ ██╔╝██║╚════██║
+echo  ╚█████╔╝██║  ██║██║  ██║  ████╔╝ ██║███████║
+echo   ╚════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝╚══════╝
+echo.
+echo   P1 NODE X1 ^| Home Control Core
+echo   Starting on http://localhost:3000
+echo.
+
+node main.js
+pause
