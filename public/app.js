@@ -14,6 +14,8 @@ const statusFields = {
   note: document.getElementById("status-note"),
 };
 
+let latestNotification = null;
+
 function addMessage(role, text) {
   const entry = document.createElement("article");
   entry.className = `message ${role}`;
@@ -32,6 +34,17 @@ function updateStatus(status) {
   statusFields.focus.textContent = status.focusMode ? "ENGAGED" : "STANDBY";
   statusFields.alarm.textContent = status.alarmArmed ? "ARMED" : "DISARMED";
   statusFields.note.textContent = status.lastNote;
+
+  if (status.latestNotification && status.latestNotification !== latestNotification) {
+    latestNotification = status.latestNotification;
+    addMessage("jarvis", status.latestNotification);
+  }
+}
+
+function tryOpenLinks(links) {
+  links.forEach((link) => {
+    window.open(link.url, "_blank", "noopener,noreferrer");
+  });
 }
 
 function renderQuickActions(items) {
@@ -97,6 +110,10 @@ async function submitCommand(command) {
     renderQuickActions(data.quickActions);
     renderLinks(data.links);
     highlight.textContent = data.highlight;
+
+    if (data.autoOpenLinks && data.links.length) {
+      tryOpenLinks(data.links);
+    }
   } catch (error) {
     addMessage("jarvis", `Fehler: ${error.message}`);
   }
@@ -126,6 +143,16 @@ function tickClock() {
   });
 }
 
+async function refreshStatus() {
+  try {
+    const data = await fetchJson("/api/status");
+    updateStatus(data.status);
+    highlight.textContent = data.highlight;
+  } catch {
+    // Status-Polling soll die UI nicht mit Fehlern fluten.
+  }
+}
+
 async function bootstrap() {
   try {
     const data = await fetchJson("/api/status");
@@ -137,6 +164,7 @@ async function bootstrap() {
 
     tickClock();
     setInterval(tickClock, 1000);
+    setInterval(refreshStatus, 5000);
   } catch (error) {
     addMessage("jarvis", `Initialisierung fehlgeschlagen: ${error.message}`);
   }

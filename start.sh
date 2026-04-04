@@ -26,3 +26,10 @@ else
   echo "  Stelle sicher, dass Node.js installiert ist und im PATH liegt."
   exit 1
 fi
+
+git init
+git add .
+git commit -m "🚀 Initial commit - Jarvis v1"
+git branch -M main
+git remote add origin https://github.com/l3nnardwlg/Jarvis.git
+git push -u origin main
