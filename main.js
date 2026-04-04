@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const { loadCommands } = require("./lib/command-loader");
+const { createLogStore } = require("./lib/log-store");
 const { createMemoryStore } = require("./lib/memory-store");
 const { findBestCommand, normalizeInput } = require("./lib/parser");
 const respond = require("./lib/response");
@@ -12,9 +13,12 @@ const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
 const COMMANDS_DIR = path.join(__dirname, "commands");
 const MEMORY_FILE = path.join(__dirname, "data", "memory.json");
+const LOG_FILE = path.join(__dirname, "data", "interaction-log.json");
 
 const memory = createMemoryStore(MEMORY_FILE);
+const logs = createLogStore(LOG_FILE);
 const commands = loadCommands(COMMANDS_DIR);
+const memorySnapshot = memory.getSnapshot();
 
 const state = {
   lightsOn: false,
@@ -23,6 +27,9 @@ const state = {
   timers: [],
   notifications: [],
   lastCommandAt: new Date().toISOString(),
+  context: {
+    ...memorySnapshot.context,
+  },
 };
 
 const mimeTypes = {
@@ -55,6 +62,7 @@ function buildStatusSnapshot() {
     activeTimers: state.timers.filter((timer) => timer.active).length,
     latestNotification: consumeNotification(),
     lastCommandAt: state.lastCommandAt,
+    lastResult: state.context.lastResult,
   };
 }
 
@@ -82,8 +90,9 @@ async function handleInput(input) {
   state.lastCommandAt = new Date().toISOString();
 
   if (!normalizedInput) {
+    logs.addEntry({ input: "", command: null, outcome: "empty" });
     return finalizeResponse(
-      respond.text("Bitte gib einen Befehl ein.", {
+      respond.error("Ich brauche noch einen Befehl von dir.", {
         highlight: "Eingabe erwartet",
         quickActions: ["Status", "Wie spät ist es?", "Wetter in Tokio", "Rechne 2+2"],
       })
@@ -95,6 +104,7 @@ async function handleInput(input) {
     normalizedInput,
     state,
     memory,
+    logs,
     helpers,
     respond,
   };
@@ -102,9 +112,14 @@ async function handleInput(input) {
   const command = findBestCommand(commands, context);
 
   if (!command) {
+    logs.addEntry({ input: String(input || ""), command: null, outcome: "unknown" });
     return finalizeResponse(
       respond.error(
-        "Befehl erkannt, aber noch nicht implementiert. Versuch Wetter, Uhrzeit in anderen Orten, Datum, Rechner, Zufallszahl, Timer, Notizen, URL öffnen, Amazon oder Witz erzählen.",
+        helpers.pickOne([
+          "Das habe ich noch nicht sauber verstanden. Versuch es mit Zeit, Wetter, Rechnen, Notizen oder einer URL.",
+          "Diesen Befehl konnte ich nicht zuordnen. Formuliere ihn etwas direkter, zum Beispiel mit Wetter, Timer oder Amazon.",
+          "Damit kann ich gerade nichts anfangen. Probier es noch einmal anders oder nutze eine der Quick Actions.",
+        ]),
         {
           highlight: "Unknown command pattern",
           quickActions: ["Status", "Uhrzeit in Tokio", "Timer 15 sekunden", "Öffne github.com"],
@@ -114,10 +129,32 @@ async function handleInput(input) {
   }
 
   try {
-    return finalizeResponse(await command.run(context));
+    const result = await command.run(context);
+    state.context.lastCommand = command.name;
+    memory.setContext({
+      lastResult: state.context.lastResult,
+      lastCommand: state.context.lastCommand,
+    });
+    logs.addEntry({
+      input: String(input || ""),
+      command: command.name,
+      outcome: "success",
+      lastResult: state.context.lastResult,
+    });
+    return finalizeResponse(result);
   } catch (error) {
+    logs.addEntry({
+      input: String(input || ""),
+      command: command.name,
+      outcome: "error",
+      detail: error.message,
+    });
     return finalizeResponse(
-      respond.error(`Befehl ${command.name} fehlgeschlagen: ${error.message}`, {
+      respond.error(helpers.pickOne([
+        "Das hat gerade nicht funktioniert. Versuch es bitte noch einmal anders formuliert.",
+        "Bei diesem Befehl ist etwas schiefgelaufen. Probier es erneut oder nutze eine Quick Action.",
+        "Den Auftrag konnte ich diesmal nicht sauber ausführen. Ein zweiter Versuch sollte helfen.",
+      ]), {
         highlight: "Command execution failed",
         quickActions: ["Status", "Wie spät ist es?", "Witz erzählen"],
       })
@@ -186,9 +223,8 @@ const server = http.createServer(async (request, response) => {
       sendJson(response, 200, result);
     } catch (error) {
       sendJson(response, 400, {
-        response: { type: "error", content: "Ungültige Anfrage." },
+        response: { type: "error", content: "Die Anfrage war unvollständig oder fehlerhaft." },
         error: "Ungültige Anfrage.",
-        detail: error.message,
       });
     }
     return;

@@ -11,8 +11,8 @@ module.exports = {
   run({ input, normalizedInput, memory, helpers, respond }) {
     if (/(liste|zeige|zeig|meine notizen)/.test(normalizedInput)) {
       const notes = memory.listNotes();
-      const noteList = notes.length ? notes.map((note, index) => `${index + 1}. ${note}`).join(" | ") : "Keine Notizen gespeichert.";
-      return respond.text(noteList, {
+      return respond.list(notes.length ? "Hier sind deine letzten Notizen:" : "Noch keine Notizen gespeichert.", {
+        items: notes.length ? notes : ["Keine Notizen gespeichert."],
         highlight: "Memory index loaded",
         quickActions: ["Speichere Notiz Milch kaufen", "Zeig meine Notizen", "Status"],
       });
@@ -20,7 +20,11 @@ module.exports = {
 
     if (/(letzte notiz|meine notiz\b)/.test(normalizedInput)) {
       const notes = memory.listNotes();
-      return respond.text(`Letzte gespeicherte Notiz: ${notes[0] || "Keine Notizen gespeichert."}`, {
+      return respond.text(helpers.pickOne([
+        `Letzte gespeicherte Notiz: ${notes[0] || "Keine Notizen gespeichert."}`,
+        `Ganz oben liegt aktuell: ${notes[0] || "Keine Notizen gespeichert."}`,
+        `Zuletzt gemerkt wurde: ${notes[0] || "Keine Notizen gespeichert."}`,
+      ]), {
         highlight: "Memory core read",
         quickActions: ["Zeig meine Notizen", "Status", "Speichere Notiz Milch kaufen"],
       });
@@ -31,7 +35,11 @@ module.exports = {
       memory.addNote(note);
     }
 
-    return respond.text(`Notiz gespeichert: ${note}`, {
+    return respond.text(helpers.pickOne([
+      `Notiz gespeichert: ${note}`,
+      `Gemerkt: ${note}`,
+      `Ist notiert: ${note}`,
+    ]), {
       highlight: "Memory core updated",
       quickActions: ["Zeig meine Notizen", "Status", "Witz erzählen"],
     });

@@ -13,7 +13,11 @@ module.exports = {
   },
   run({ input, helpers, respond }) {
     const product = helpers.extractAmazonProduct(input);
-    return respond.link(`Ich habe eine Amazon-Suche für \"${product}\" vorbereitet.`, {
+    return respond.link(helpers.pickOne([
+      `Ich habe eine Amazon-Suche für \"${product}\" vorbereitet.`,
+      `Die Suche nach \"${product}\" steht bereit.`,
+      `Amazon-Link für \"${product}\" ist erzeugt.`,
+    ]), {
       links: [{ label: `Amazon: ${product}`, url: helpers.searchAmazon(product) }],
       highlight: "Shopping-Link erzeugt",
       linkType: "amazon",

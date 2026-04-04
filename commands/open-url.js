@@ -4,13 +4,21 @@ module.exports = {
   run({ input, helpers, respond }) {
     const url = helpers.extractUrl(input);
     if (!url) {
-      return respond.error("Ich konnte keine URL erkennen. Beispiel: Öffne github.com", {
+      return respond.error(helpers.pickOne([
+        "Ich konnte keine URL erkennen. Beispiel: Öffne github.com",
+        "Die Adresse war nicht klar genug. Versuch es zum Beispiel mit Öffne github.com",
+        "Ich brauche eine erkennbare URL, zum Beispiel github.com oder youtube.com",
+      ]), {
         highlight: "URL parser waiting",
         quickActions: ["Öffne github.com", "Öffne amazon.de", "Status"],
       });
     }
 
-    return respond.link(`URL bereit: ${url}`, {
+    return respond.link(helpers.pickOne([
+      `URL bereit: ${url}`,
+      `Die Adresse steht bereit: ${url}`,
+      `Ich habe den Link vorbereitet: ${url}`,
+    ]), {
       links: [{ label: `Öffnen: ${url}`, url }],
       highlight: "External link staged",
       autoOpenLinks: true,

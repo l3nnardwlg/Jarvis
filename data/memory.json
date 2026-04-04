@@ -1,10 +1,15 @@
 {
   "notes": [
+    "speiche  kabel",
     "Eier holen",
     "Brot kaufen",
     "Milch kaufen"
   ],
   "profile": {
     "username": null
+  },
+  "context": {
+    "lastResult": 20,
+    "lastCommand": "amazon"
   }
 }

@@ -1,6 +1,7 @@
 const chatLog = document.getElementById("chat-log");
 const commandForm = document.getElementById("command-form");
 const commandInput = document.getElementById("command-input");
+const submitButton = commandForm.querySelector('button[type="submit"]');
 const quickActions = document.getElementById("quick-actions");
 const actionLinks = document.getElementById("action-links");
 const highlight = document.getElementById("highlight");
@@ -8,6 +9,7 @@ const linksPanel = document.getElementById("links-panel");
 const settingsToggle = document.getElementById("settings-toggle");
 const settingsPanel = document.getElementById("settings-panel");
 const settingsClose = document.getElementById("settings-close");
+const settingsDarkMode = document.getElementById("setting-dark-mode");
 const settingsAmazon = document.getElementById("setting-auto-open-amazon");
 const settingsUrl = document.getElementById("setting-auto-open-url");
 const settingsActionFeed = document.getElementById("setting-show-action-feed");
@@ -15,6 +17,7 @@ const settingsActionFeed = document.getElementById("setting-show-action-feed");
 const SETTINGS_KEY = "jarvis-ui-settings";
 
 const defaultSettings = {
+  darkMode: true,
   autoOpenAmazonLinks: false,
   autoOpenUrlLinks: true,
   showActionFeed: true,
@@ -27,6 +30,7 @@ const statusFields = {
   focus: document.getElementById("status-focus"),
   alarm: document.getElementById("status-alarm"),
   note: document.getElementById("status-note"),
+  result: document.getElementById("status-result"),
 };
 
 let latestNotification = null;
@@ -45,11 +49,17 @@ function saveSettings() {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(uiSettings));
 }
 
+function applyTheme() {
+  document.body.dataset.theme = uiSettings.darkMode ? "dark" : "light";
+}
+
 function syncSettingsUi() {
+  settingsDarkMode.checked = uiSettings.darkMode;
   settingsAmazon.checked = uiSettings.autoOpenAmazonLinks;
   settingsUrl.checked = uiSettings.autoOpenUrlLinks;
   settingsActionFeed.checked = uiSettings.showActionFeed;
   linksPanel.hidden = !uiSettings.showActionFeed;
+  applyTheme();
 }
 
 function setSettingsOpen(isOpen) {
@@ -58,41 +68,123 @@ function setSettingsOpen(isOpen) {
   settingsToggle.setAttribute("aria-expanded", String(isOpen));
 }
 
-function buildMessageActions(links) {
-  if (!links.length) {
-    return "";
-  }
-
-  return `
-    <div class="message-actions">
-      ${links
-        .map(
-          (link) => `<a class="message-action" href="${link.url}" target="_blank" rel="noreferrer noopener">${link.label}</a>`
-        )
-        .join("")}
-    </div>
-  `;
-}
-
 function normalizeResponsePayload(payload) {
   if (typeof payload === "string") {
-    return { type: "text", content: payload };
+    return { type: "text", content: payload, items: [] };
   }
 
-  return payload || { type: "text", content: "" };
+  return {
+    type: payload?.type || "text",
+    content: payload?.content || "",
+    items: Array.isArray(payload?.items) ? payload.items : [],
+  };
+}
+
+function scrollChatToBottom() {
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function createMessageActions(links) {
+  if (!Array.isArray(links) || !links.length) {
+    return null;
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "message-actions";
+
+  links.forEach((link) => {
+    const anchor = document.createElement("a");
+    anchor.className = "message-action";
+    anchor.href = link.url;
+    anchor.target = "_blank";
+    anchor.rel = "noreferrer noopener";
+    anchor.textContent = link.label;
+    actions.appendChild(anchor);
+  });
+
+  return actions;
+}
+
+function createResponseBody(response) {
+  const wrapper = document.createElement("div");
+  wrapper.className = `message-body message-body-${response.type}`;
+
+  if (response.content) {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = response.content;
+    wrapper.appendChild(paragraph);
+  }
+
+  if (response.type === "list" && response.items.length) {
+    const list = document.createElement("ul");
+    list.className = "message-list";
+
+    response.items.forEach((item) => {
+      const listItem = document.createElement("li");
+      listItem.textContent = item;
+      list.appendChild(listItem);
+    });
+
+    wrapper.appendChild(list);
+  }
+
+  return wrapper;
 }
 
 function addMessage(role, payload, links = []) {
   const response = normalizeResponsePayload(payload);
   const entry = document.createElement("article");
-  entry.className = `message ${role}${response.type === "error" ? " error" : ""}`;
-  entry.innerHTML = `
-    <span class="message-label">${role === "user" ? "Operator" : "Jarvis"}</span>
-    <div class="message-body">${response.content}</div>
-    ${buildMessageActions(links)}
-  `;
+  entry.className = `message ${role} message-type-${response.type}${response.type === "error" ? " error" : ""}`;
+
+  const label = document.createElement("span");
+  label.className = "message-label";
+  label.textContent = role === "user" ? "Operator" : "Jarvis";
+
+  entry.appendChild(label);
+  entry.appendChild(createResponseBody(response));
+
+  const actions = createMessageActions(links);
+  if (actions) {
+    entry.appendChild(actions);
+  }
+
   chatLog.appendChild(entry);
-  chatLog.scrollTop = chatLog.scrollHeight;
+  scrollChatToBottom();
+  return entry;
+}
+
+function addThinkingIndicator() {
+  const entry = document.createElement("article");
+  entry.className = "message jarvis thinking";
+
+  const label = document.createElement("span");
+  label.className = "message-label";
+  label.textContent = "Jarvis";
+
+  const body = document.createElement("div");
+  body.className = "message-body message-body-thinking";
+
+  const text = document.createElement("p");
+  text.textContent = "Jarvis denkt";
+
+  const dots = document.createElement("span");
+  dots.className = "thinking-dots";
+  dots.setAttribute("aria-hidden", "true");
+  dots.innerHTML = "<span></span><span></span><span></span>";
+
+  body.appendChild(text);
+  body.appendChild(dots);
+  entry.appendChild(label);
+  entry.appendChild(body);
+  chatLog.appendChild(entry);
+  scrollChatToBottom();
+  return entry;
+}
+
+function removeElement(element) {
+  if (element?.parentNode) {
+    element.parentNode.removeChild(element);
+  }
 }
 
 function updateStatus(status) {
@@ -102,10 +194,11 @@ function updateStatus(status) {
   statusFields.focus.textContent = status.focusMode ? "ENGAGED" : "STANDBY";
   statusFields.alarm.textContent = status.alarmArmed ? "ARMED" : "DISARMED";
   statusFields.note.textContent = status.lastNote;
+  statusFields.result.textContent = status.lastResult ?? "--";
 
   if (status.latestNotification && status.latestNotification !== latestNotification) {
     latestNotification = status.latestNotification;
-    addMessage("jarvis", status.latestNotification);
+    addMessage("jarvis", { type: "text", content: status.latestNotification });
   }
 }
 
@@ -131,8 +224,8 @@ function shouldAutoOpenLinks(data) {
   return data.autoOpenLinks;
 }
 
-function renderQuickActions(items) {
-  quickActions.innerHTML = "";
+function renderQuickActions(items = []) {
+  quickActions.replaceChildren();
 
   items.forEach((item) => {
     const button = document.createElement("button");
@@ -143,11 +236,14 @@ function renderQuickActions(items) {
   });
 }
 
-function renderLinks(links) {
-  actionLinks.innerHTML = "";
+function renderLinks(links = []) {
+  actionLinks.replaceChildren();
 
   if (!links.length) {
-    actionLinks.innerHTML = '<p class="placeholder">Noch keine externen Aktionen erzeugt.</p>';
+    const placeholder = document.createElement("p");
+    placeholder.className = "placeholder";
+    placeholder.textContent = "Noch keine externen Aktionen erzeugt.";
+    actionLinks.appendChild(placeholder);
     return;
   }
 
@@ -166,19 +262,32 @@ async function fetchJson(url, options) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.detail || data.error || "Fehler bei der Anfrage.");
+    throw new Error(data.response?.content || data.error || "Fehler bei der Anfrage.");
   }
 
   return data;
 }
 
+function setBusyState(isBusy) {
+  commandInput.disabled = isBusy;
+  submitButton.disabled = isBusy;
+  submitButton.textContent = isBusy ? "WAIT" : "EXECUTE";
+}
+
 async function submitCommand(command) {
-  const trimmedCommand = command.trim();
+  const trimmedCommand = String(command || "").trim();
   if (!trimmedCommand) {
     return;
   }
 
   addMessage("user", trimmedCommand);
+  setBusyState(true);
+
+  let thinkingIndicator = null;
+  const thinkingDelay = 300 + Math.floor(Math.random() * 501);
+  const thinkingTimeout = window.setTimeout(() => {
+    thinkingIndicator = addThinkingIndicator();
+  }, thinkingDelay);
 
   try {
     const data = await fetchJson("/api/ask", {
@@ -199,7 +308,16 @@ async function submitCommand(command) {
       tryOpenLinks(data.links);
     }
   } catch (error) {
-    addMessage("jarvis", `Fehler: ${error.message}`);
+    console.error(error);
+    addMessage("jarvis", {
+      type: "error",
+      content: "Das hat gerade nicht geklappt. Versuch es bitte noch einmal anders.",
+    });
+  } finally {
+    window.clearTimeout(thinkingTimeout);
+    removeElement(thinkingIndicator);
+    setBusyState(false);
+    commandInput.focus();
   }
 }
 
@@ -216,6 +334,12 @@ settingsToggle.addEventListener("click", () => {
 
 settingsClose.addEventListener("click", () => {
   setSettingsOpen(false);
+});
+
+settingsDarkMode.addEventListener("change", () => {
+  uiSettings.darkMode = settingsDarkMode.checked;
+  applyTheme();
+  saveSettings();
 });
 
 settingsAmazon.addEventListener("change", () => {
@@ -274,8 +398,13 @@ async function bootstrap() {
     tickClock();
     setInterval(tickClock, 1000);
     setInterval(refreshStatus, 5000);
+    commandInput.focus();
   } catch (error) {
-    addMessage("jarvis", `Initialisierung fehlgeschlagen: ${error.message}`);
+    console.error(error);
+    addMessage("jarvis", {
+      type: "error",
+      content: "Die Oberfläche konnte nicht vollständig starten. Lade die Seite bitte neu.",
+    });
   }
 }
 
