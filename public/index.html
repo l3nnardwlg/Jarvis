@@ -8,6 +8,53 @@
   </head>
   <body>
     <div class="noise"></div>
+    <button id="settings-toggle" class="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">
+      SETTINGS
+    </button>
+
+    <aside id="settings-panel" class="settings-panel" aria-hidden="true">
+      <div class="settings-header">
+        <div>
+          <p class="eyebrow">Control Layer</p>
+          <h2>Settings</h2>
+        </div>
+        <button id="settings-close" class="settings-close" type="button" aria-label="Settings schließen">X</button>
+      </div>
+
+      <div class="settings-list">
+        <label class="settings-item">
+          <div>
+            <strong>Amazon direkt öffnen</strong>
+            <p>Öffnet Suchergebnisse sofort in einem neuen Tab statt nur einen Chat-Button zu zeigen.</p>
+          </div>
+          <input id="setting-auto-open-amazon" type="checkbox" />
+        </label>
+
+        <label class="settings-item">
+          <div>
+            <strong>URL-Befehle direkt öffnen</strong>
+            <p>Öffnet Befehle wie Öffne github.com sofort in einem neuen Tab.</p>
+          </div>
+          <input id="setting-auto-open-url" type="checkbox" />
+        </label>
+
+        <label class="settings-item">
+          <div>
+            <strong>Action Feed anzeigen</strong>
+            <p>Blendet die Link-Ausgabe unterhalb der Konsole ein oder aus.</p>
+          </div>
+          <input id="setting-show-action-feed" type="checkbox" />
+        </label>
+
+        <div class="settings-item settings-item-static">
+          <div>
+            <strong>Weitere Optionen folgen</strong>
+            <p>Hier können später Voice, APIs, Home-Automation-Adapter und Berechtigungen landen.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
     <main class="shell">
       <section class="hero panel">
         <div class="hero-copy">
@@ -91,7 +138,7 @@
         </div>
       </section>
 
-      <section class="panel links-panel">
+      <section id="links-panel" class="panel links-panel">
         <div class="panel-header">
           <h2>Action Feed</h2>
           <span class="mono">OUTPUT</span>

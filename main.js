@@ -314,6 +314,7 @@ function buildResponse(reply, extras = {}) {
     links: extras.links || [],
     highlight: extras.highlight || "System nominal",
     autoOpenLinks: extras.autoOpenLinks || false,
+    linkType: extras.linkType || null,
   };
 }
 
@@ -465,6 +466,7 @@ async function handleInput(input) {
     return buildResponse(`Ich habe eine Amazon-Suche für "${product}" vorbereitet.`, {
       links: [{ label: `Amazon: ${product}`, url }],
       highlight: "Shopping-Link erzeugt",
+      linkType: "amazon",
       quickActions: ["Such Tastatur auf Amazon", "Such ESP32 auf Amazon", "Öffne amazon.de"],
     });
   }
@@ -482,6 +484,7 @@ async function handleInput(input) {
       links: [{ label: `Öffnen: ${url}`, url }],
       highlight: "External link staged",
       autoOpenLinks: true,
+      linkType: "url",
       quickActions: ["Öffne youtube.com", "Öffne github.com", "Status"],
     });
   }
