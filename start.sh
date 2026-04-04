@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
+
+if (set -o pipefail) 2>/dev/null; then
+  set -o pipefail
+fi
 
 PORT="${PORT:-3000}"
 
@@ -17,9 +21,9 @@ echo ""
 
 # node-Binary ermitteln (Git Bash, WSL und native Linux kompatibel)
 if command -v node &>/dev/null; then
-  node main.js
+  exec node main.js
 elif command -v node.exe &>/dev/null; then
-  node.exe main.js
+  exec node.exe main.js
 else
   echo ""
   echo "  ERROR: 'node' wurde nicht gefunden."
@@ -27,9 +31,3 @@ else
   exit 1
 fi
 
-git init
-git add .
-git commit -m "🚀 Initial commit - Jarvis v1"
-git branch -M main
-git remote add origin https://github.com/l3nnardwlg/Jarvis.git
-git push -u origin main
