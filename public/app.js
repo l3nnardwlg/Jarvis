@@ -74,12 +74,21 @@ function buildMessageActions(links) {
   `;
 }
 
-function addMessage(role, text, links = []) {
+function normalizeResponsePayload(payload) {
+  if (typeof payload === "string") {
+    return { type: "text", content: payload };
+  }
+
+  return payload || { type: "text", content: "" };
+}
+
+function addMessage(role, payload, links = []) {
+  const response = normalizeResponsePayload(payload);
   const entry = document.createElement("article");
-  entry.className = `message ${role}`;
+  entry.className = `message ${role}${response.type === "error" ? " error" : ""}`;
   entry.innerHTML = `
     <span class="message-label">${role === "user" ? "Operator" : "Jarvis"}</span>
-    <div class="message-body">${text}</div>
+    <div class="message-body">${response.content}</div>
     ${buildMessageActions(links)}
   `;
   chatLog.appendChild(entry);
@@ -180,7 +189,7 @@ async function submitCommand(command) {
       body: JSON.stringify({ message: trimmedCommand }),
     });
 
-    addMessage("jarvis", data.reply, data.links);
+    addMessage("jarvis", data.response || data.reply, data.links);
     updateStatus(data.status);
     renderQuickActions(data.quickActions);
     renderLinks(data.links);
@@ -260,7 +269,7 @@ async function bootstrap() {
     renderQuickActions(data.quickActions);
     renderLinks(data.links);
     highlight.textContent = data.highlight;
-    addMessage("jarvis", "Jarvis online. Gib einen Befehl ein oder nutze die Quick Commands.");
+    addMessage("jarvis", data.response || "Jarvis online. Gib einen Befehl ein oder nutze die Quick Commands.");
 
     tickClock();
     setInterval(tickClock, 1000);
