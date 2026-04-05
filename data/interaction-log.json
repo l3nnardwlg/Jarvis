@@ -1,6 +1,221 @@
 {
   "entries": [
     {
+      "timestamp": "2026-04-05T22:53:35.877Z",
+      "input": "reche 6^5",
+      "command": "calc",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "calc"
+    },
+    {
+      "timestamp": "2026-04-05T22:53:28.392Z",
+      "input": "speiche notiz adrian",
+      "command": "notes",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "notes_add"
+    },
+    {
+      "timestamp": "2026-04-05T22:53:19.032Z",
+      "input": "packe adrian auf die notizliste",
+      "command": "notes",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "notes_list"
+    },
+    {
+      "timestamp": "2026-04-05T22:52:55.983Z",
+      "input": "ich meine steuerhinterziehung",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:52:42.157Z",
+      "input": "was ist stauerhinterzihung",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:52:20.036Z",
+      "input": "was ist cvv",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:51:59.215Z",
+      "input": "suche kaffemaschine auf amazon",
+      "command": "amazon",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "amazon"
+    },
+    {
+      "timestamp": "2026-04-05T22:51:45.307Z",
+      "input": "such kopfhöhrer auf amazon",
+      "command": "amazon",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "amazon"
+    },
+    {
+      "timestamp": "2026-04-05T22:29:01.858Z",
+      "input": "Wie funktioniert Jarvis aktuell?",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:27:25.401Z",
+      "input": "erkläre mir vcc",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:25:08.920Z",
+      "input": "Wie funktioniert Jarvis aktuell?",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:24:44.531Z",
+      "input": "Wie funktioniert Jarvis aktuell?",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:24:09.594Z",
+      "input": "Wie funktioniert Jarvis aktuell?",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:23:37.307Z",
+      "input": "Wie funktioniert Jarvis aktuell?",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:22:58.612Z",
+      "input": "Wie funktioniert Jarvis aktuell?",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T22:22:00.117Z",
+      "input": "Erklaere mir Ollama",
+      "command": "knowledge",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "knowledge"
+    },
+    {
+      "timestamp": "2026-04-05T21:43:07.141Z",
+      "input": "wie spaet ist es in berlin",
+      "command": "time",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "time"
+    },
+    {
+      "timestamp": "2026-04-05T21:42:35.049Z",
+      "input": "status",
+      "command": "status",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "status"
+    },
+    {
+      "timestamp": "2026-04-05T21:41:27.024Z",
+      "input": "wie spaet ist es",
+      "command": null,
+      "outcome": "unknown"
+    },
+    {
+      "timestamp": "2026-04-05T21:41:27.010Z",
+      "input": "wie spaet ist es",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": "Ollama Routing ist aktuell nicht verfuegbar."
+    },
+    {
+      "timestamp": "2026-04-05T21:41:17.851Z",
+      "input": "uhrzeit in deutschand",
+      "command": "time",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": null
+    },
+    {
+      "timestamp": "2026-04-05T21:41:17.835Z",
+      "input": "uhrzeit in deutschand",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": "Ollama Routing ist aktuell nicht verfuegbar."
+    },
+    {
+      "timestamp": "2026-04-05T21:40:56.051Z",
+      "input": "Uhrzeit in Tokio",
+      "command": "time",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": null
+    },
+    {
+      "timestamp": "2026-04-05T21:40:56.033Z",
+      "input": "Uhrzeit in Tokio",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": "Ollama Routing ist aktuell nicht verfuegbar."
+    },
+    {
+      "timestamp": "2026-04-05T21:40:40.021Z",
+      "input": "Wie spät ist es?",
+      "command": null,
+      "outcome": "unknown"
+    },
+    {
+      "timestamp": "2026-04-05T21:40:40.005Z",
+      "input": "Wie spät ist es?",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": "Ollama Routing ist aktuell nicht verfuegbar."
+    },
+    {
+      "timestamp": "2026-04-05T21:40:35.834Z",
+      "input": "Status",
+      "command": "status",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": null
+    },
+    {
+      "timestamp": "2026-04-05T21:40:35.811Z",
+      "input": "Status",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": "Ollama Routing ist aktuell nicht verfuegbar."
+    },
+    {
       "timestamp": "2026-04-05T14:33:45.208Z",
       "input": "Rechne 5+5",
       "command": "calc",
@@ -156,202 +371,6 @@
       "command": null,
       "outcome": "ai-fallback",
       "detail": ""
-    },
-    {
-      "timestamp": "2026-04-04T22:47:09.139Z",
-      "input": "Wie spät ist es?",
-      "command": "time",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": "time"
-    },
-    {
-      "timestamp": "2026-04-04T22:45:47.901Z",
-      "input": "�ffne youtube",
-      "command": "open-url",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": "open_url"
-    },
-    {
-      "timestamp": "2026-04-04T22:45:46.610Z",
-      "input": "wie sp�t ist es",
-      "command": "time",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": "time"
-    },
-    {
-      "timestamp": "2026-04-04T22:45:24.032Z",
-      "input": "�ffne youtube",
-      "command": "open-url",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": "open_url"
-    },
-    {
-      "timestamp": "2026-04-04T22:45:22.727Z",
-      "input": "wie sp�t ist es",
-      "command": "time",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": "time"
-    },
-    {
-      "timestamp": "2026-04-04T22:44:52.660Z",
-      "input": "�ffne youtube",
-      "command": "open-url",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": "open_url"
-    },
-    {
-      "timestamp": "2026-04-04T22:44:50.895Z",
-      "input": "such maus auf amazon",
-      "command": "amazon",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": "amazon"
-    },
-    {
-      "timestamp": "2026-04-04T22:44:49.001Z",
-      "input": "rechne 5+5",
-      "command": "calc",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": "calc"
-    },
-    {
-      "timestamp": "2026-04-04T22:44:46.977Z",
-      "input": "wie sp�t ist es",
-      "command": "time",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": "time"
-    },
-    {
-      "timestamp": "2026-04-04T22:43:47.064Z",
-      "input": "�ffne youtube",
-      "command": null,
-      "outcome": "unknown"
-    },
-    {
-      "timestamp": "2026-04-04T22:43:47.054Z",
-      "input": "�ffne youtube",
-      "command": null,
-      "outcome": "ai-fallback",
-      "detail": "Ollama Anfrage lief in ein Timeout."
-    },
-    {
-      "timestamp": "2026-04-04T22:43:41.825Z",
-      "input": "such maus auf amazon",
-      "command": "amazon",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": null
-    },
-    {
-      "timestamp": "2026-04-04T22:43:41.809Z",
-      "input": "such maus auf amazon",
-      "command": null,
-      "outcome": "ai-fallback",
-      "detail": "Ollama Anfrage lief in ein Timeout."
-    },
-    {
-      "timestamp": "2026-04-04T22:43:36.636Z",
-      "input": "rechne 5+5",
-      "command": "calc",
-      "outcome": "success",
-      "lastResult": 10,
-      "aiRoute": null
-    },
-    {
-      "timestamp": "2026-04-04T22:43:36.624Z",
-      "input": "rechne 5+5",
-      "command": null,
-      "outcome": "ai-fallback",
-      "detail": "Ollama Anfrage lief in ein Timeout."
-    },
-    {
-      "timestamp": "2026-04-04T22:43:31.242Z",
-      "input": "wie sp�t ist es",
-      "command": null,
-      "outcome": "unknown"
-    },
-    {
-      "timestamp": "2026-04-04T22:43:31.212Z",
-      "input": "wie sp�t ist es",
-      "command": null,
-      "outcome": "ai-fallback",
-      "detail": "Ollama Anfrage lief in ein Timeout."
-    },
-    {
-      "timestamp": "2026-04-04T22:42:42.219Z",
-      "input": "wie spät",
-      "command": null,
-      "outcome": "unknown"
-    },
-    {
-      "timestamp": "2026-04-04T22:42:37.052Z",
-      "input": "uhrzeit",
-      "command": "time",
-      "outcome": "success",
-      "lastResult": 20
-    },
-    {
-      "timestamp": "2026-04-04T22:42:29.112Z",
-      "input": "Wie spät ist es?",
-      "command": null,
-      "outcome": "unknown"
-    },
-    {
-      "timestamp": "2026-04-04T21:56:56.346Z",
-      "input": "Such Kopfhörer auf Amazon",
-      "command": "amazon",
-      "outcome": "success",
-      "lastResult": 20
-    },
-    {
-      "timestamp": "2026-04-04T21:56:49.666Z",
-      "input": "Witz erzählen",
-      "command": "joke",
-      "outcome": "success",
-      "lastResult": 20
-    },
-    {
-      "timestamp": "2026-04-04T21:56:42.975Z",
-      "input": "speiche notiz kabel",
-      "command": "notes",
-      "outcome": "success",
-      "lastResult": 20
-    },
-    {
-      "timestamp": "2026-04-04T21:56:26.861Z",
-      "input": "Pack kabel auf die notizliste",
-      "command": "notes",
-      "outcome": "success",
-      "lastResult": 20
-    },
-    {
-      "timestamp": "2026-04-04T21:54:37.113Z",
-      "input": "zeig meine notizen",
-      "command": "notes",
-      "outcome": "success",
-      "lastResult": 20
-    },
-    {
-      "timestamp": "2026-04-04T21:54:36.950Z",
-      "input": "mal 2",
-      "command": "calc",
-      "outcome": "success",
-      "lastResult": 20
-    },
-    {
-      "timestamp": "2026-04-04T21:54:36.783Z",
-      "input": "rechne 5+5",
-      "command": "calc",
-      "outcome": "success",
-      "lastResult": 10
     }
   ]
 }

@@ -2,7 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const { routeWithAI } = require("./lib/ai-router");
+const { getAIStatus, primeAIStatus, routeWithAI } = require("./lib/ai-router");
 const { loadCommands } = require("./lib/command-loader");
 const { createLogStore } = require("./lib/log-store");
 const { createMemoryStore } = require("./lib/memory-store");
@@ -51,6 +51,7 @@ function consumeNotification() {
 
 function buildStatusSnapshot() {
   const memorySnapshot = memory.getSnapshot();
+  const ai = getAIStatus();
 
   return {
     time: helpers.getTime(),
@@ -64,6 +65,7 @@ function buildStatusSnapshot() {
     latestNotification: consumeNotification(),
     lastCommandAt: state.lastCommandAt,
     lastResult: state.context.lastResult,
+    ai,
   };
 }
 
@@ -137,13 +139,13 @@ async function handleInput(input) {
     return finalizeResponse(
       respond.error(
         helpers.pickOne([
-          "Das habe ich noch nicht sauber verstanden. Versuch es mit Zeit, Wetter, Rechnen, Notizen oder einer URL.",
-          "Diesen Befehl konnte ich nicht zuordnen. Formuliere ihn etwas direkter, zum Beispiel mit Wetter, Timer oder Amazon.",
-          "Damit kann ich gerade nichts anfangen. Probier es noch einmal anders oder nutze eine der Quick Actions.",
+          "Das habe ich noch nicht sauber verstanden. Versuch es mit Zeit, Wetter, Rechnen, Notizen, einer URL oder einer Wissensfrage.",
+          "Diesen Befehl konnte ich nicht zuordnen. Formuliere ihn etwas direkter, zum Beispiel mit Wetter, Timer, Amazon oder einer Erklaerung.",
+          "Damit kann ich gerade nichts anfangen. Probier es anders oder stelle mir direkt eine Wissensfrage wie Erklaere mir Ollama.",
         ]),
         {
           highlight: "Unknown command pattern",
-          quickActions: ["Status", "Uhrzeit in Tokio", "Timer 15 sekunden", "Öffne github.com"],
+          quickActions: ["Status", "Erkläre mir Ollama", "Uhrzeit in Tokio", "Öffne github.com"],
         }
       )
     );
@@ -266,6 +268,9 @@ const server = http.createServer(async (request, response) => {
 
 server.listen(PORT, () => {
   console.log(`Jarvis läuft auf http://localhost:${PORT}`);
+  primeAIStatus().catch(() => {
+    // Ollama ist optional und soll den lokalen Start nicht blockieren.
+  });
 });
 
 module.exports = {

@@ -15,11 +15,13 @@ const settingsUiSound = document.getElementById("setting-ui-sound");
 const settingsAmazon = document.getElementById("setting-auto-open-amazon");
 const settingsUrl = document.getElementById("setting-auto-open-url");
 const settingsActionFeed = document.getElementById("setting-show-action-feed");
+const sendIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>';
+const spinnerIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>';
 
 const SETTINGS_KEY = "jarvis-ui-settings";
 
 const defaultSettings = {
-  darkMode: true,
+  darkMode: false,
   uiSound: false,
   autoOpenAmazonLinks: false,
   autoOpenUrlLinks: true,
@@ -34,9 +36,11 @@ const statusFields = {
   alarm: document.getElementById("status-alarm"),
   note: document.getElementById("status-note"),
   result: document.getElementById("status-result"),
+  ai: document.getElementById("status-ai"),
 };
 
 const moduleElements = {
+  ai: document.getElementById("module-ai"),
   time: document.getElementById("module-time"),
   calc: document.getElementById("module-calc"),
   amazon: document.getElementById("module-amazon"),
@@ -186,7 +190,7 @@ async function addMessage(role, payload, links = [], options = {}) {
 
   const label = document.createElement("span");
   label.className = "message-label";
-  label.textContent = role === "user" ? "Du" : "Jarvis";
+  label.textContent = role === "user" ? "INPUT" : "JARVIS";
 
   const body = document.createElement("div");
   body.className = `message-body message-body-${response.type}`;
@@ -213,11 +217,11 @@ function addThinkingIndicator() {
 
   const label = document.createElement("span");
   label.className = "message-label";
-  label.textContent = "Jarvis";
+  label.textContent = "JARVIS";
 
   const body = document.createElement("div");
   body.className = "message-body message-body-thinking";
-  body.innerHTML = '<p>Verarbeitung laeuft</p><span class="thinking-dots" aria-hidden="true"><span></span><span></span><span></span></span>';
+  body.innerHTML = '<p>Processing</p><span class="thinking-dots" aria-hidden="true"><span></span><span></span><span></span></span>';
 
   entry.appendChild(label);
   entry.appendChild(body);
@@ -275,11 +279,27 @@ function detectModuleName(command, data) {
 function updateStatus(status) {
   statusFields.time.textContent = status.time;
   statusFields.date.textContent = status.date;
-  statusFields.light.textContent = status.lightsOn ? "ONLINE" : "OFFLINE";
-  statusFields.focus.textContent = status.focusMode ? "ENGAGED" : "STANDBY";
-  statusFields.alarm.textContent = status.alarmArmed ? "ARMED" : "DISARMED";
+  statusFields.light.textContent = status.lightsOn ? "An" : "Aus";
+  statusFields.focus.textContent = status.focusMode ? "Aktiv" : "Ruhig";
+  statusFields.alarm.textContent = status.alarmArmed ? "Aktiv" : "Aus";
   statusFields.note.textContent = status.lastNote;
   statusFields.result.textContent = status.lastResult ?? "--";
+
+  if (status.ai?.enabled) {
+    statusFields.ai.textContent = status.ai.available ? `${status.ai.model} verfuegbar` : "Wartet";
+    moduleElements.ai.classList.remove("is-error", "is-pulse");
+
+    if (status.ai.available || status.ai.state === "unknown") {
+      moduleElements.ai.classList.add("is-active");
+    } else {
+      moduleElements.ai.classList.remove("is-active");
+      moduleElements.ai.classList.add("is-error");
+    }
+  } else {
+    statusFields.ai.textContent = "Deaktiviert";
+    moduleElements.ai.classList.remove("is-error", "is-pulse");
+    moduleElements.ai.classList.add("is-active");
+  }
 
   if (status.latestNotification && status.latestNotification !== latestNotification) {
     latestNotification = status.latestNotification;
@@ -326,8 +346,8 @@ function renderLinks(links = []) {
 
   if (!links.length) {
     const placeholder = document.createElement("p");
-    placeholder.className = "placeholder";
-    placeholder.textContent = "Noch keine externen Aktionen erzeugt.";
+    placeholder.className = "empty-hint";
+    placeholder.textContent = "Keine externen Aktionen.";
     actionLinks.appendChild(placeholder);
     return;
   }
@@ -356,8 +376,8 @@ async function fetchJson(url, options) {
 function setBusyState(isBusy) {
   commandInput.disabled = isBusy;
   submitButton.disabled = isBusy;
-  submitButton.textContent = isBusy ? "LAEUFT" : "SENDEN";
-  setModeLabel(isBusy ? "AKTIV" : "BEREIT", isBusy);
+  submitButton.innerHTML = isBusy ? spinnerIcon : sendIcon;
+  setModeLabel(isBusy ? "PROCESSING" : "BEREIT", isBusy);
 }
 
 function rememberCommand(command) {
@@ -575,8 +595,8 @@ async function bootstrap() {
     renderQuickActions(data.quickActions);
     renderLinks(data.links);
     highlight.textContent = data.highlight;
-    setModeLabel("BEREIT");
-    await addMessage("jarvis", data.response || "Jarvis online. Gib einen Befehl ein oder nutze die Quick Commands.", [], { typewriter: true });
+    setModeLabel("Bereit");
+    await addMessage("jarvis", data.response || "Jarvis ist bereit. Schreib einfach los.", [], { typewriter: true });
 
     tickClock();
     setInterval(tickClock, 1000);
@@ -584,7 +604,7 @@ async function bootstrap() {
     commandInput.focus();
   } catch (error) {
     console.error(error);
-    setModeLabel("FEHLER");
+    setModeLabel("Fehler");
     await addMessage("jarvis", {
       type: "error",
       content: "Die Oberfläche konnte nicht vollständig starten. Lade die Seite bitte neu.",

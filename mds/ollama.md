@@ -161,3 +161,29 @@ System:
 1. Ollama lokal gestartet lassen.
 2. Sicherstellen, dass `llama3` installiert ist.
 3. Jarvis normal starten und echte Eingaben im UI pruefen.
+
+---
+
+## Aktueller Integrationsstandard
+
+Ollama ist jetzt als optionale Routing-Schicht gedacht:
+
+* Jarvis bleibt immer lokal funktionsfaehig.
+* AI wird nur fuer Intent-Erkennung genutzt.
+* Wenn Ollama nicht erreichbar ist, faellt Jarvis sofort auf den lokalen Parser zurueck.
+* Wiederholte Timeouts werden durch einen kurzen Health-Cache und Cooldown vermieden.
+
+### Relevante Umgebungsvariablen
+
+* `OLLAMA_ENABLED=true|false`
+* `OLLAMA_ENDPOINT=http://localhost:11434/api/generate`
+* `OLLAMA_MODEL=llama3`
+* `OLLAMA_TIMEOUT_MS=15000`
+* `OLLAMA_HEALTH_TTL_MS=30000`
+* `OLLAMA_RETRY_AFTER_FAILURE_MS=15000`
+
+### Empfehlung fuer den Betrieb
+
+* Lokal mit AI: `OLLAMA_ENABLED=true`
+* Rein lokal ohne Modell: `OLLAMA_ENABLED=false`
+* UI und `/api/status` zeigen jetzt, ob der AI Router online ist.

@@ -3,218 +3,154 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Jarvis Control Panel</title>
+    <title>JARVIS</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="noise"></div>
-    <div class="scanlines"></div>
-    <button id="settings-toggle" class="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">
-      SETTINGS
+    <!-- Ambient background layers -->
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-glow" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <!-- Settings drawer -->
+    <button id="settings-toggle" class="hud-btn settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     </button>
 
-    <aside id="settings-panel" class="settings-panel" aria-hidden="true">
-      <div class="settings-header">
-        <div>
-          <p class="eyebrow">Lokale Steuerung</p>
-          <h2>Settings</h2>
-        </div>
-        <button id="settings-close" class="settings-close" type="button" aria-label="Settings schließen">X</button>
+    <aside id="settings-panel" class="settings-drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <span class="drawer-tag">SYS.CONFIG</span>
+        <h2>Einstellungen</h2>
+        <button id="settings-close" class="hud-btn" type="button" aria-label="Schliessen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
       </div>
-
-      <div class="settings-list">
-        <label class="settings-item">
-          <div>
-            <strong>Dunkles Interface</strong>
-            <p>Schaltet zwischen dunklem Standardmodus und heller Kontrollansicht um.</p>
-          </div>
+      <div class="drawer-body">
+        <label class="setting-row">
+          <div><strong>Dark Mode</strong><p>Interface-Theme wechseln</p></div>
           <input id="setting-dark-mode" type="checkbox" />
         </label>
-
-        <label class="settings-item">
-          <div>
-            <strong>UI-Sound</strong>
-            <p>Spielt bei Jarvis-Antworten einen kurzen Synth-Beep ab.</p>
-          </div>
+        <label class="setting-row">
+          <div><strong>UI-Sound</strong><p>Synth-Beep bei Antworten</p></div>
           <input id="setting-ui-sound" type="checkbox" />
         </label>
-
-        <label class="settings-item">
-          <div>
-            <strong>Amazon direkt öffnen</strong>
-            <p>Öffnet Suchergebnisse sofort in einem neuen Tab statt nur einen Chat-Button zu zeigen.</p>
-          </div>
+        <label class="setting-row">
+          <div><strong>Amazon direkt</strong><p>Suchergebnisse sofort oeffnen</p></div>
           <input id="setting-auto-open-amazon" type="checkbox" />
         </label>
-
-        <label class="settings-item">
-          <div>
-            <strong>URL-Befehle direkt öffnen</strong>
-            <p>Öffnet Befehle wie Öffne github.com sofort in einem neuen Tab.</p>
-          </div>
+        <label class="setting-row">
+          <div><strong>URL direkt</strong><p>URL-Befehle sofort oeffnen</p></div>
           <input id="setting-auto-open-url" type="checkbox" />
         </label>
-
-        <label class="settings-item">
-          <div>
-            <strong>Action Feed anzeigen</strong>
-            <p>Blendet die Link-Ausgabe unterhalb der Konsole ein oder aus.</p>
-          </div>
+        <label class="setting-row">
+          <div><strong>Action Feed</strong><p>Link-Ausgabe ein-/ausblenden</p></div>
           <input id="setting-show-action-feed" type="checkbox" />
         </label>
-
-        <div class="settings-item settings-item-static">
-          <div>
-            <strong>Weitere Optionen folgen</strong>
-            <p>Hier können später Voice, APIs, Home-Automation-Adapter und Berechtigungen landen.</p>
-          </div>
-        </div>
       </div>
     </aside>
 
-    <main class="shell">
-      <aside class="panel sidebar-panel">
-        <div class="sidebar-brand">
-          <p class="eyebrow">Lokales Bedienfeld</p>
-          <h1>JARVIS</h1>
-          <p class="lede">Lokale Steueroberfläche für Befehle, Status und schnelle Aktionen.</p>
+    <!-- Main HUD -->
+    <main class="hud">
+
+      <!-- Top bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <span class="sys-tag">LOCAL SYSTEM</span>
+          <span id="command-mode" class="status-chip online">BEREIT</span>
         </div>
-
-        <section class="sidebar-block system-block">
-          <div class="block-header">
-            <h2>System Status</h2>
-            <span class="live-pill">AKTIV</span>
-          </div>
-          <div class="status-stack">
-            <article class="status-card">
-              <span>Highlight</span>
-              <strong id="highlight">Cluster X1 P2 Start Success</strong>
-            </article>
-            <article class="status-card compact">
-              <span>Uhrzeit</span>
-              <strong id="status-time">--:--:--</strong>
-            </article>
-            <article class="status-card compact">
-              <span>Datum</span>
-              <strong id="status-date">Wird geladen</strong>
-            </article>
-            <article class="status-card compact">
-              <span>Letztes Ergebnis</span>
-              <strong id="status-result">--</strong>
-            </article>
-          </div>
-        </section>
-
-        <section class="sidebar-block modules-block">
-          <div class="block-header">
-            <h2>Verfügbare Module</h2>
-            <span class="mono">LOKAL</span>
-          </div>
-          <div class="module-list">
-            <article id="module-time" class="module-card is-active">
-              <span class="module-led" aria-hidden="true"></span>
-              <div>
-                <strong>TIME</strong>
-                <p>Uhrzeit und Datum</p>
-              </div>
-            </article>
-            <article id="module-calc" class="module-card is-active">
-              <span class="module-led" aria-hidden="true"></span>
-              <div>
-                <strong>CALC</strong>
-                <p>Rechnen und Folgeoperationen</p>
-              </div>
-            </article>
-            <article id="module-amazon" class="module-card is-active">
-              <span class="module-led" aria-hidden="true"></span>
-              <div>
-                <strong>AMAZON</strong>
-                <p>Produktsuche und Links</p>
-              </div>
-            </article>
-            <article id="module-core" class="module-card is-active">
-              <span class="module-led" aria-hidden="true"></span>
-              <div>
-                <strong>CORE</strong>
-                <p>Antworten und Eingabesteuerung</p>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section class="sidebar-block telemetry-block">
-          <div class="block-header">
-            <h2>Übersicht</h2>
-            <span class="mono">LOCAL</span>
-          </div>
-          <div class="telemetry-grid">
-            <article class="telemetry-card">
-              <span>Licht</span>
-              <strong id="status-light">--</strong>
-            </article>
-            <article class="telemetry-card">
-              <span>Fokus</span>
-              <strong id="status-focus">--</strong>
-            </article>
-            <article class="telemetry-card">
-              <span>Alarm</span>
-              <strong id="status-alarm">--</strong>
-            </article>
-            <article class="telemetry-card">
-              <span>Notiz</span>
-              <strong id="status-note">Keine Daten</strong>
-            </article>
-          </div>
-        </section>
-
-        <section id="links-panel" class="sidebar-block links-panel">
-          <div class="block-header">
-            <h2>Aktionen</h2>
-            <span class="mono">LINKS</span>
-          </div>
-          <div id="action-links" class="action-links">
-            <p class="placeholder">Noch keine externen Aktionen erzeugt.</p>
-          </div>
-        </section>
-      </aside>
-
-      <section class="panel console-panel">
-        <header class="console-header">
-          <div>
-            <p class="eyebrow">Eingabe</p>
-            <h2>Befehle</h2>
-          </div>
-          <div class="console-meta">
-            <span class="mono">LOKAL</span>
-            <span id="command-mode" class="mode-pill">BEREIT</span>
-          </div>
-        </header>
-
-        <div class="terminal-frame">
-          <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <div class="topbar-center">
+          <h1 class="logo-text">J.A.R.V.I.S</h1>
         </div>
-
-        <div class="quick-strip">
-          <p class="mini-label">Schnellaktionen</p>
-          <div id="quick-actions" class="quick-actions"></div>
+        <div class="topbar-right">
+          <span class="sys-tag" id="status-time">--:--:--</span>
+          <span class="sys-tag" id="status-date">---</span>
         </div>
+      </header>
 
-        <form id="command-form" class="command-form">
-          <div class="command-input-shell">
-            <span class="command-prompt">&gt;</span>
-            <input
-              id="command-input"
-              name="command"
-              type="text"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="Befehl eingeben..."
-            />
-            <span class="cursor-indicator" aria-hidden="true">|</span>
+      <!-- Core grid -->
+      <div class="hud-grid">
+
+        <!-- Left column: telemetry -->
+        <aside class="col-left">
+
+          <section class="hud-card" id="core-visual">
+            <div class="card-tag">CORE.ENERGY</div>
+            <div class="reactor-wrap">
+              <div class="reactor">
+                <div class="reactor-ring r1"></div>
+                <div class="reactor-ring r2"></div>
+                <div class="reactor-ring r3"></div>
+                <div class="reactor-core"></div>
+              </div>
+              <p class="reactor-label" id="highlight">Jarvis ist bereit.</p>
+            </div>
+          </section>
+
+          <section class="hud-card">
+            <div class="card-tag">MODULES</div>
+            <div class="module-grid">
+              <div id="module-ai" class="mod is-active"><span class="mod-dot"></span><span>Wissen</span></div>
+              <div id="module-time" class="mod is-active"><span class="mod-dot"></span><span>Zeit</span></div>
+              <div id="module-calc" class="mod is-active"><span class="mod-dot"></span><span>Rechnen</span></div>
+              <div id="module-amazon" class="mod is-active"><span class="mod-dot"></span><span>Suche</span></div>
+              <div id="module-core" class="mod is-active"><span class="mod-dot"></span><span>System</span></div>
+            </div>
+          </section>
+
+          <section class="hud-card tele-card">
+            <div class="card-tag">TELEMETRY</div>
+            <div class="tele-grid">
+              <div class="tele-item"><span class="tele-label">Licht</span><span class="tele-val" id="status-light">--</span></div>
+              <div class="tele-item"><span class="tele-label">Fokus</span><span class="tele-val" id="status-focus">--</span></div>
+              <div class="tele-item"><span class="tele-label">Alarm</span><span class="tele-val" id="status-alarm">--</span></div>
+              <div class="tele-item"><span class="tele-label">AI</span><span class="tele-val" id="status-ai">--</span></div>
+              <div class="tele-item span-2"><span class="tele-label">Letztes Ergebnis</span><span class="tele-val" id="status-result">--</span></div>
+              <div class="tele-item span-2"><span class="tele-label">Notiz</span><span class="tele-val" id="status-note">Keine Daten</span></div>
+            </div>
+          </section>
+
+          <section id="links-panel" class="hud-card">
+            <div class="card-tag">ACTIONS</div>
+            <div id="action-links" class="action-list">
+              <p class="empty-hint">Keine externen Aktionen.</p>
+            </div>
+          </section>
+        </aside>
+
+        <!-- Right column: console -->
+        <section class="col-right">
+          <div class="console">
+            <div class="console-head">
+              <span class="card-tag">CONSOLE.OUTPUT</span>
+              <span class="live-dot"></span>
+            </div>
+
+            <div id="chat-log" class="feed" aria-live="polite"></div>
+
+            <div class="quick-strip">
+              <div id="quick-actions" class="quick-actions"></div>
+            </div>
+
+            <form id="command-form" class="cmd-bar">
+              <div class="cmd-input-wrap">
+                <span class="cmd-prompt">&gt;_</span>
+                <input
+                  id="command-input"
+                  name="command"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Befehl eingeben..."
+                />
+              </div>
+              <button type="submit" class="cmd-send">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              </button>
+            </form>
           </div>
-          <button type="submit">SENDEN</button>
-        </form>
-      </section>
+        </section>
+
+      </div>
     </main>
 
     <script src="/app.js"></script>
