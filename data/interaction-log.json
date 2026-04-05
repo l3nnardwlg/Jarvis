@@ -1,6 +1,148 @@
 {
   "entries": [
     {
+      "timestamp": "2026-04-05T14:33:45.208Z",
+      "input": "Rechne 5+5",
+      "command": "calc",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": null
+    },
+    {
+      "timestamp": "2026-04-05T14:33:45.197Z",
+      "input": "Rechne 5+5",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
+      "timestamp": "2026-04-05T14:33:41.648Z",
+      "input": "10 + 5",
+      "command": null,
+      "outcome": "unknown"
+    },
+    {
+      "timestamp": "2026-04-05T14:33:41.644Z",
+      "input": "10 + 5",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
+      "timestamp": "2026-04-05T14:33:33.817Z",
+      "input": "5 x 19",
+      "command": null,
+      "outcome": "unknown"
+    },
+    {
+      "timestamp": "2026-04-05T14:33:33.814Z",
+      "input": "5 x 19",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
+      "timestamp": "2026-04-05T14:33:24.286Z",
+      "input": "rechne 5 hoch 19",
+      "command": "calc",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": null
+    },
+    {
+      "timestamp": "2026-04-05T14:33:24.278Z",
+      "input": "rechne 5 hoch 19",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
+      "timestamp": "2026-04-05T14:33:12.217Z",
+      "input": "rechne 5^19",
+      "command": "calc",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": null
+    },
+    {
+      "timestamp": "2026-04-05T14:33:12.208Z",
+      "input": "rechne 5^19",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
+      "timestamp": "2026-04-05T14:32:58.888Z",
+      "input": "reche 7 hoch die wurzel aus eine millionen",
+      "command": null,
+      "outcome": "unknown"
+    },
+    {
+      "timestamp": "2026-04-05T14:32:58.877Z",
+      "input": "reche 7 hoch die wurzel aus eine millionen",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
+      "timestamp": "2026-04-05T14:32:43.654Z",
+      "input": "licht aus",
+      "command": "light",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": null
+    },
+    {
+      "timestamp": "2026-04-05T14:32:43.637Z",
+      "input": "licht aus",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
+      "timestamp": "2026-04-05T14:32:33.055Z",
+      "input": "lich nich an",
+      "command": null,
+      "outcome": "unknown"
+    },
+    {
+      "timestamp": "2026-04-05T14:32:33.051Z",
+      "input": "lich nich an",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
+      "timestamp": "2026-04-05T14:32:25.788Z",
+      "input": "licht weg",
+      "command": "light",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": null
+    },
+    {
+      "timestamp": "2026-04-05T14:32:25.779Z",
+      "input": "licht weg",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
+      "timestamp": "2026-04-05T14:32:16.936Z",
+      "input": "licht an",
+      "command": "light",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": null
+    },
+    {
+      "timestamp": "2026-04-05T14:32:16.916Z",
+      "input": "licht an",
+      "command": null,
+      "outcome": "ai-fallback",
+      "detail": ""
+    },
+    {
       "timestamp": "2026-04-05T14:18:49.296Z",
       "input": "wetter grad in london",
       "command": "weather",

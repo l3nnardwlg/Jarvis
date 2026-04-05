@@ -480,6 +480,7 @@ body[data-theme="light"] .terminal-frame {
   max-height: calc(100vh - 285px);
   overflow: auto;
   display: grid;
+  align-items: start;
   gap: 14px;
   padding: 22px;
 }
