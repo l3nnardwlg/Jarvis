@@ -10,6 +10,6 @@
   },
   "context": {
     "lastResult": 10,
-    "lastCommand": "time"
+    "lastCommand": "weather"
   }
 }
