@@ -7,10 +7,18 @@
     "Milch kaufen"
   ],
   "profile": {
-    "username": null
+    "username": null,
+    "preferredMode": "standard"
   },
   "context": {
     "lastResult": 10,
-    "lastCommand": "calc"
-  }
+    "lastCommand": "amazon"
+  },
+  "projects": [],
+  "preferences": {
+    "defaultMode": "standard",
+    "searxngEnabled": false,
+    "autoWebSearch": false
+  },
+  "history": []
 }

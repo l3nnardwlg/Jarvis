@@ -9,6 +9,10 @@ const { createMemoryStore } = require("./lib/memory-store");
 const { findBestCommand, normalizeInput } = require("./lib/parser");
 const respond = require("./lib/response");
 const helpers = require("./lib/helpers");
+const { streamChat, shouldRouteToCommand, VALID_MODES, MODE_QUICK_ACTIONS } = require("./lib/chat-engine");
+const sessionStore = require("./lib/session-store");
+const { searchWeb, isSearchAvailable, SEARXNG_ENABLED } = require("./lib/search");
+const taskStore = require("./lib/task-store");
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -255,6 +259,190 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  // ── v2: Streaming Chat ──
+  if (request.method === "POST" && url.pathname === "/api/chat") {
+    try {
+      const rawBody = await getRequestBody(request);
+      const body = rawBody ? JSON.parse(rawBody) : {};
+      const message = String(body.message || "").trim();
+
+      if (!message) {
+        response.writeHead(200, {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        });
+        response.write(`data: ${JSON.stringify({ type: "error", message: "Leere Nachricht." })}\n\n`);
+        response.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
+        response.end();
+        return;
+      }
+
+      // If input matches a known command, route through legacy command system
+      if (shouldRouteToCommand(message, commands)) {
+        const result = await handleInput(message);
+        response.writeHead(200, {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        });
+        response.write(`data: ${JSON.stringify({ type: "command-result", ...result })}\n\n`);
+        response.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
+        response.end();
+        return;
+      }
+
+      await streamChat(
+        { sessionId: body.sessionId, message, mode: body.mode },
+        response,
+        request
+      );
+    } catch (error) {
+      if (!response.headersSent) {
+        response.writeHead(200, {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        });
+      }
+      response.write(`data: ${JSON.stringify({ type: "error", message: error.message })}\n\n`);
+      response.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
+      response.end();
+    }
+    return;
+  }
+
+  // ── v2: Sessions ──
+  if (request.method === "GET" && url.pathname === "/api/sessions") {
+    sendJson(response, 200, { sessions: sessionStore.listSessions() });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/sessions") {
+    try {
+      const rawBody = await getRequestBody(request);
+      const body = rawBody ? JSON.parse(rawBody) : {};
+      const session = sessionStore.createSession(body.mode);
+      sendJson(response, 201, { id: session.id, title: session.title, mode: session.mode });
+    } catch {
+      sendJson(response, 400, { error: "Ungueltige Anfrage." });
+    }
+    return;
+  }
+
+  const sessionDeleteMatch = url.pathname.match(/^\/api\/sessions\/([a-f0-9-]+)$/);
+  if (request.method === "DELETE" && sessionDeleteMatch) {
+    const deleted = sessionStore.deleteSession(sessionDeleteMatch[1]);
+    sendJson(response, 200, { deleted });
+    return;
+  }
+
+  // ── v2: Session History ──
+  const sessionHistoryMatch = url.pathname.match(/^\/api\/sessions\/([a-f0-9-]+)\/messages$/);
+  if (request.method === "GET" && sessionHistoryMatch) {
+    const messages = sessionStore.getMessageHistory(sessionHistoryMatch[1]);
+    sendJson(response, 200, { messages });
+    return;
+  }
+
+  // ── v2: Modes ──
+  if (request.method === "GET" && url.pathname === "/api/modes") {
+    const modes = VALID_MODES.map((id) => ({
+      id,
+      label: { standard: "Standard", dev: "Entwickler", business: "Business", hacker: "Hacker" }[id],
+      quickActions: MODE_QUICK_ACTIONS[id],
+    }));
+    sendJson(response, 200, { modes });
+    return;
+  }
+
+  // ── v2: Web Search ──
+  if (request.method === "POST" && url.pathname === "/api/search") {
+    try {
+      const rawBody = await getRequestBody(request);
+      const body = rawBody ? JSON.parse(rawBody) : {};
+      const query = String(body.query || "").trim();
+
+      if (!query) {
+        sendJson(response, 400, { error: "Suchbegriff fehlt." });
+        return;
+      }
+
+      const available = await isSearchAvailable();
+      if (!available) {
+        sendJson(response, 503, { error: "SearXNG ist nicht erreichbar." });
+        return;
+      }
+
+      const results = await searchWeb(query);
+      sendJson(response, 200, { results });
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
+    return;
+  }
+
+  // ── v2: Tasks ──
+  if (request.method === "GET" && url.pathname === "/api/tasks") {
+    const status = url.searchParams.get("status") || undefined;
+    sendJson(response, 200, { tasks: taskStore.listTasks(status) });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/tasks") {
+    try {
+      const rawBody = await getRequestBody(request);
+      const body = rawBody ? JSON.parse(rawBody) : {};
+      const task = taskStore.createTask(
+        body.title || "Unbenannte Aufgabe",
+        body.description || "",
+        Array.isArray(body.steps) ? body.steps : []
+      );
+      sendJson(response, 201, task);
+    } catch {
+      sendJson(response, 400, { error: "Ungueltige Anfrage." });
+    }
+    return;
+  }
+
+  const taskPatchMatch = url.pathname.match(/^\/api\/tasks\/([a-f0-9-]+)$/);
+  if (request.method === "PATCH" && taskPatchMatch) {
+    try {
+      const rawBody = await getRequestBody(request);
+      const body = rawBody ? JSON.parse(rawBody) : {};
+      const task = taskStore.updateTask(taskPatchMatch[1], body);
+      if (!task) {
+        sendJson(response, 404, { error: "Task nicht gefunden." });
+        return;
+      }
+      sendJson(response, 200, task);
+    } catch {
+      sendJson(response, 400, { error: "Ungueltige Anfrage." });
+    }
+    return;
+  }
+
+  const taskDeleteMatch = url.pathname.match(/^\/api\/tasks\/([a-f0-9-]+)$/);
+  if (request.method === "DELETE" && taskDeleteMatch) {
+    const deleted = taskStore.deleteTask(taskDeleteMatch[1]);
+    sendJson(response, 200, { deleted });
+    return;
+  }
+
+  // ── v2: Logs ──
+  if (request.method === "GET" && url.pathname === "/api/logs") {
+    const limit = Number(url.searchParams.get("limit")) || 50;
+    const type = url.searchParams.get("type") || undefined;
+    const sessionId = url.searchParams.get("sessionId") || undefined;
+    sendJson(response, 200, { entries: logs.getEntries({ limit, type, sessionId }) });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/logs/stats") {
+    sendJson(response, 200, logs.getStats());
+    return;
+  }
+
   const safePath = url.pathname === "/" ? "/index.html" : url.pathname;
   const filePath = path.normalize(path.join(PUBLIC_DIR, safePath));
 
@@ -271,6 +459,8 @@ server.listen(PORT, () => {
   primeAIStatus().catch(() => {
     // Ollama ist optional und soll den lokalen Start nicht blockieren.
   });
+  // Cleanup stale sessions every 5 minutes
+  setInterval(() => sessionStore.cleanupStaleSessions(), 5 * 60 * 1000);
 });
 
 module.exports = {

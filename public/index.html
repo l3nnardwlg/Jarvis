@@ -13,10 +13,6 @@
     <div class="scanlines" aria-hidden="true"></div>
 
     <!-- Settings drawer -->
-    <button id="settings-toggle" class="hud-btn settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-    </button>
-
     <aside id="settings-panel" class="settings-drawer" aria-hidden="true">
       <div class="drawer-head">
         <span class="drawer-tag">SYS.CONFIG</span>
@@ -26,10 +22,6 @@
         </button>
       </div>
       <div class="drawer-body">
-        <label class="setting-row">
-          <div><strong>Dark Mode</strong><p>Interface-Theme wechseln</p></div>
-          <input id="setting-dark-mode" type="checkbox" />
-        </label>
         <label class="setting-row">
           <div><strong>UI-Sound</strong><p>Synth-Beep bei Antworten</p></div>
           <input id="setting-ui-sound" type="checkbox" />
@@ -42,116 +34,125 @@
           <div><strong>URL direkt</strong><p>URL-Befehle sofort oeffnen</p></div>
           <input id="setting-auto-open-url" type="checkbox" />
         </label>
-        <label class="setting-row">
-          <div><strong>Action Feed</strong><p>Link-Ausgabe ein-/ausblenden</p></div>
-          <input id="setting-show-action-feed" type="checkbox" />
-        </label>
       </div>
     </aside>
 
-    <!-- Main HUD -->
-    <main class="hud">
+    <!-- App layout -->
+    <div class="app-layout">
 
-      <!-- Top bar -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <span class="sys-tag">LOCAL SYSTEM</span>
-          <span id="command-mode" class="status-chip online">BEREIT</span>
-        </div>
-        <div class="topbar-center">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
           <h1 class="logo-text">J.A.R.V.I.S</h1>
+          <button id="new-chat-btn" class="sidebar-btn new-chat" type="button" title="Neuer Chat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
         </div>
-        <div class="topbar-right">
-          <span class="sys-tag" id="status-time">--:--:--</span>
-          <span class="sys-tag" id="status-date">---</span>
-        </div>
-      </header>
 
-      <!-- Core grid -->
-      <div class="hud-grid">
-
-        <!-- Left column: telemetry -->
-        <aside class="col-left">
-
-          <section class="hud-card" id="core-visual">
-            <div class="card-tag">CORE.ENERGY</div>
-            <div class="reactor-wrap">
-              <div class="reactor">
-                <div class="reactor-ring r1"></div>
-                <div class="reactor-ring r2"></div>
-                <div class="reactor-ring r3"></div>
-                <div class="reactor-core"></div>
-              </div>
-              <p class="reactor-label" id="highlight">Jarvis ist bereit.</p>
-            </div>
-          </section>
-
-          <section class="hud-card">
-            <div class="card-tag">MODULES</div>
-            <div class="module-grid">
-              <div id="module-ai" class="mod is-active"><span class="mod-dot"></span><span>Wissen</span></div>
-              <div id="module-time" class="mod is-active"><span class="mod-dot"></span><span>Zeit</span></div>
-              <div id="module-calc" class="mod is-active"><span class="mod-dot"></span><span>Rechnen</span></div>
-              <div id="module-amazon" class="mod is-active"><span class="mod-dot"></span><span>Suche</span></div>
-              <div id="module-core" class="mod is-active"><span class="mod-dot"></span><span>System</span></div>
-            </div>
-          </section>
-
-          <section class="hud-card tele-card">
-            <div class="card-tag">TELEMETRY</div>
-            <div class="tele-grid">
-              <div class="tele-item"><span class="tele-label">Licht</span><span class="tele-val" id="status-light">--</span></div>
-              <div class="tele-item"><span class="tele-label">Fokus</span><span class="tele-val" id="status-focus">--</span></div>
-              <div class="tele-item"><span class="tele-label">Alarm</span><span class="tele-val" id="status-alarm">--</span></div>
-              <div class="tele-item"><span class="tele-label">AI</span><span class="tele-val" id="status-ai">--</span></div>
-              <div class="tele-item span-2"><span class="tele-label">Letztes Ergebnis</span><span class="tele-val" id="status-result">--</span></div>
-              <div class="tele-item span-2"><span class="tele-label">Notiz</span><span class="tele-val" id="status-note">Keine Daten</span></div>
-            </div>
-          </section>
-
-          <section id="links-panel" class="hud-card">
-            <div class="card-tag">ACTIONS</div>
-            <div id="action-links" class="action-list">
-              <p class="empty-hint">Keine externen Aktionen.</p>
-            </div>
-          </section>
-        </aside>
-
-        <!-- Right column: console -->
-        <section class="col-right">
-          <div class="console">
-            <div class="console-head">
-              <span class="card-tag">CONSOLE.OUTPUT</span>
-              <span class="live-dot"></span>
-            </div>
-
-            <div id="chat-log" class="feed" aria-live="polite"></div>
-
-            <div class="quick-strip">
-              <div id="quick-actions" class="quick-actions"></div>
-            </div>
-
-            <form id="command-form" class="cmd-bar">
-              <div class="cmd-input-wrap">
-                <span class="cmd-prompt">&gt;_</span>
-                <input
-                  id="command-input"
-                  name="command"
-                  type="text"
-                  autocomplete="off"
-                  spellcheck="false"
-                  placeholder="Befehl eingeben..."
-                />
-              </div>
-              <button type="submit" class="cmd-send">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-              </button>
-            </form>
+        <!-- Mode selector -->
+        <div class="sidebar-section">
+          <div class="section-tag">MODUS</div>
+          <div class="mode-selector" id="mode-selector">
+            <button class="mode-btn active" data-mode="standard" title="Standard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              <span>Standard</span>
+            </button>
+            <button class="mode-btn" data-mode="dev" title="Entwickler">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <span>Dev</span>
+            </button>
+            <button class="mode-btn" data-mode="business" title="Business">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+              <span>Business</span>
+            </button>
+            <button class="mode-btn" data-mode="hacker" title="Hacker">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+              <span>Hacker</span>
+            </button>
           </div>
-        </section>
+        </div>
 
-      </div>
-    </main>
+        <!-- Chat list -->
+        <div class="sidebar-section sidebar-chats">
+          <div class="section-tag">CHATS</div>
+          <div id="chat-list" class="chat-list"></div>
+        </div>
+
+        <!-- Telemetry (collapsible) -->
+        <details class="sidebar-section sidebar-tele">
+          <summary class="section-tag section-tag-toggle">TELEMETRY</summary>
+          <div class="tele-mini">
+            <div class="tele-mini-row"><span>Licht</span><span id="status-light">--</span></div>
+            <div class="tele-mini-row"><span>Fokus</span><span id="status-focus">--</span></div>
+            <div class="tele-mini-row"><span>Alarm</span><span id="status-alarm">--</span></div>
+            <div class="tele-mini-row"><span>AI</span><span id="status-ai">--</span></div>
+            <div class="tele-mini-row"><span>Ergebnis</span><span id="status-result">--</span></div>
+          </div>
+        </details>
+
+        <!-- Sidebar footer -->
+        <div class="sidebar-footer">
+          <button id="settings-toggle" class="hud-btn" type="button" title="Einstellungen">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+          <div class="sidebar-status">
+            <span class="live-dot" id="ai-dot"></span>
+            <span class="sys-tag" id="status-time">--:--:--</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Mobile sidebar toggle -->
+      <button id="sidebar-toggle" class="sidebar-mobile-toggle" type="button" aria-label="Sidebar oeffnen">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+
+      <!-- Chat area -->
+      <main class="chat-area">
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <span id="command-mode" class="status-chip online">BEREIT</span>
+            <span id="mode-chip" class="mode-chip" data-mode="standard">Standard</span>
+          </div>
+          <div class="topbar-center">
+            <div class="reactor-mini">
+              <div class="reactor-mini-core"></div>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <span class="sys-tag" id="status-date">---</span>
+          </div>
+        </header>
+
+        <!-- Console -->
+        <div class="console">
+          <div id="chat-log" class="feed" aria-live="polite"></div>
+
+          <div class="quick-strip">
+            <div id="quick-actions" class="quick-actions"></div>
+          </div>
+
+          <form id="command-form" class="cmd-bar">
+            <div class="cmd-input-wrap">
+              <span class="cmd-prompt">&gt;_</span>
+              <input
+                id="command-input"
+                name="command"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="Nachricht oder /help ..."
+              />
+            </div>
+            <button type="submit" class="cmd-send">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </button>
+          </form>
+        </div>
+      </main>
+
+    </div>
 
     <script src="/app.js"></script>
   </body>

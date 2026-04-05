@@ -1,6 +1,14 @@
 {
   "entries": [
     {
+      "timestamp": "2026-04-05T23:30:03.832Z",
+      "input": "suche nach agf-studios",
+      "command": "amazon",
+      "outcome": "success",
+      "lastResult": 10,
+      "aiRoute": "amazon"
+    },
+    {
       "timestamp": "2026-04-05T22:53:35.877Z",
       "input": "reche 6^5",
       "command": "calc",
