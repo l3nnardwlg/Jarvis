@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JARVIS</title>
+    <title>JARVIS v2</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -16,22 +16,26 @@
     <aside id="settings-panel" class="settings-drawer" aria-hidden="true">
       <div class="drawer-head">
         <span class="drawer-tag">SYS.CONFIG</span>
-        <h2>Einstellungen</h2>
-        <button id="settings-close" class="hud-btn" type="button" aria-label="Schliessen">
+        <h2>Settings</h2>
+        <button id="settings-close" class="hud-btn" type="button" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
       </div>
       <div class="drawer-body">
         <label class="setting-row">
-          <div><strong>UI-Sound</strong><p>Synth-Beep bei Antworten</p></div>
+          <div><strong>UI Sound</strong><p>Synth beep on responses</p></div>
           <input id="setting-ui-sound" type="checkbox" />
         </label>
         <label class="setting-row">
-          <div><strong>Amazon direkt</strong><p>Suchergebnisse sofort oeffnen</p></div>
-          <input id="setting-auto-open-amazon" type="checkbox" />
+          <div><strong>Voice Input</strong><p>Enable microphone for voice commands</p></div>
+          <input id="setting-voice-input" type="checkbox" />
         </label>
         <label class="setting-row">
-          <div><strong>URL direkt</strong><p>URL-Befehle sofort oeffnen</p></div>
+          <div><strong>Voice Output</strong><p>Speak responses aloud</p></div>
+          <input id="setting-voice-output" type="checkbox" />
+        </label>
+        <label class="setting-row">
+          <div><strong>Auto Open URLs</strong><p>Open URL commands automatically</p></div>
           <input id="setting-auto-open-url" type="checkbox" />
         </label>
       </div>
@@ -44,30 +48,30 @@
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <h1 class="logo-text">J.A.R.V.I.S</h1>
-          <button id="new-chat-btn" class="sidebar-btn new-chat" type="button" title="Neuer Chat">
+          <button id="new-chat-btn" class="sidebar-btn new-chat" type="button" title="New Chat">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
           </button>
         </div>
 
         <!-- Mode selector -->
         <div class="sidebar-section">
-          <div class="section-tag">MODUS</div>
+          <div class="section-tag">MODE</div>
           <div class="mode-selector" id="mode-selector">
             <button class="mode-btn active" data-mode="standard" title="Standard">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
               <span>Standard</span>
             </button>
-            <button class="mode-btn" data-mode="dev" title="Entwickler">
+            <button class="mode-btn" data-mode="dev" title="Developer">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
               <span>Dev</span>
             </button>
-            <button class="mode-btn" data-mode="business" title="Business">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
-              <span>Business</span>
+            <button class="mode-btn" data-mode="creative" title="Creative">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              <span>Creative</span>
             </button>
-            <button class="mode-btn" data-mode="hacker" title="Hacker">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-              <span>Hacker</span>
+            <button class="mode-btn" data-mode="analyst" title="Analyst">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+              <span>Analyst</span>
             </button>
           </div>
         </div>
@@ -78,22 +82,31 @@
           <div id="chat-list" class="chat-list"></div>
         </div>
 
-        <!-- Telemetry (collapsible) -->
-        <details class="sidebar-section sidebar-tele">
-          <summary class="section-tag section-tag-toggle">TELEMETRY</summary>
+        <!-- System dashboard -->
+        <details class="sidebar-section sidebar-tele" open>
+          <summary class="section-tag section-tag-toggle">SYSTEM</summary>
           <div class="tele-mini">
-            <div class="tele-mini-row"><span>Licht</span><span id="status-light">--</span></div>
-            <div class="tele-mini-row"><span>Fokus</span><span id="status-focus">--</span></div>
-            <div class="tele-mini-row"><span>Alarm</span><span id="status-alarm">--</span></div>
             <div class="tele-mini-row"><span>AI</span><span id="status-ai">--</span></div>
-            <div class="tele-mini-row"><span>Ergebnis</span><span id="status-result">--</span></div>
+            <div class="tele-mini-row"><span>Memory</span><span id="status-memory">--</span></div>
+            <div class="tele-mini-row"><span>Plugins</span><span id="status-plugins">--</span></div>
+            <div class="tele-mini-row"><span>Voice</span><span id="status-voice">--</span></div>
+            <div class="tele-mini-row"><span>Tasks</span><span id="status-tasks">--</span></div>
           </div>
+        </details>
+
+        <!-- Plugins section -->
+        <details class="sidebar-section sidebar-tele">
+          <summary class="section-tag section-tag-toggle">PLUGINS</summary>
+          <div id="plugin-list" class="tele-mini"></div>
         </details>
 
         <!-- Sidebar footer -->
         <div class="sidebar-footer">
-          <button id="settings-toggle" class="hud-btn" type="button" title="Einstellungen">
+          <button id="settings-toggle" class="hud-btn" type="button" title="Settings">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+          <button id="voice-toggle" class="hud-btn" type="button" title="Voice Input">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
           </button>
           <div class="sidebar-status">
             <span class="live-dot" id="ai-dot"></span>
@@ -103,7 +116,7 @@
       </aside>
 
       <!-- Mobile sidebar toggle -->
-      <button id="sidebar-toggle" class="sidebar-mobile-toggle" type="button" aria-label="Sidebar oeffnen">
+      <button id="sidebar-toggle" class="sidebar-mobile-toggle" type="button" aria-label="Open sidebar">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </button>
 
@@ -112,7 +125,7 @@
         <!-- Topbar -->
         <header class="topbar">
           <div class="topbar-left">
-            <span id="command-mode" class="status-chip online">BEREIT</span>
+            <span id="command-mode" class="status-chip online">ONLINE</span>
             <span id="mode-chip" class="mode-chip" data-mode="standard">Standard</span>
           </div>
           <div class="topbar-center">
@@ -142,7 +155,7 @@
                 type="text"
                 autocomplete="off"
                 spellcheck="false"
-                placeholder="Nachricht oder /help ..."
+                placeholder="Message or /help ..."
               />
             </div>
             <button type="submit" class="cmd-send">

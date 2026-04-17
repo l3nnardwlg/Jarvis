@@ -1,0 +1,8 @@
+{
+  "id": "system-monitor",
+  "name": "System Monitor",
+  "version": "1.0.0",
+  "description": "Monitor system resources - CPU, memory, disk, uptime",
+  "author": "Jarvis",
+  "main": "index.js"
+}

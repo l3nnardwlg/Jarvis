@@ -1,0 +1,8 @@
+{
+  "id": "weather",
+  "name": "Weather Plugin",
+  "version": "1.0.0",
+  "description": "Real-time weather information using Open-Meteo API (no API key needed)",
+  "author": "Jarvis",
+  "main": "index.js"
+}

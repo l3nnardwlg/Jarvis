@@ -1,11 +1,16 @@
 {
-  "name": "jarvis-home-core",
-  "version": "1.0.0",
-  "description": "Lokale Jarvis-Demo mit Node.js und markanter Weboberflaeche",
+  "name": "jarvis-ai-assistant",
+  "version": "2.0.0",
+  "description": "Advanced modular AI assistant with voice, memory, plugins, and automation",
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
+    "cli": "node ui/cli/index.js",
+    "start:legacy": "node main.legacy.js",
     "start:sh": "bash start.sh",
     "start:bat": "start.bat"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

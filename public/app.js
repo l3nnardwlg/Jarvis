@@ -15,9 +15,12 @@ const settingsToggle = document.getElementById("settings-toggle");
 const settingsPanel = document.getElementById("settings-panel");
 const settingsClose = document.getElementById("settings-close");
 const settingsUiSound = document.getElementById("setting-ui-sound");
-const settingsAmazon = document.getElementById("setting-auto-open-amazon");
+const settingsVoiceInput = document.getElementById("setting-voice-input");
+const settingsVoiceOutput = document.getElementById("setting-voice-output");
 const settingsUrl = document.getElementById("setting-auto-open-url");
+const voiceToggle = document.getElementById("voice-toggle");
 const aiDot = document.getElementById("ai-dot");
+const pluginList = document.getElementById("plugin-list");
 
 const sendIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>';
 const spinnerIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>';
@@ -26,15 +29,18 @@ const spinnerIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"
 const SETTINGS_KEY = "jarvis-v2-settings";
 const SESSION_KEY = "jarvis-v2-session";
 
-let currentSessionId = localStorage.getItem(SESSION_KEY) || null;
+let currentSessionId = localStorage.getItem(SESSION_KEY) || "default";
 let currentMode = "standard";
 let audioContext = null;
+let isListening = false;
+let recognition = null;
 
 const historyState = { entries: [], index: -1, draft: "" };
 
 const defaultSettings = {
   uiSound: false,
-  autoOpenAmazonLinks: false,
+  voiceInput: false,
+  voiceOutput: false,
   autoOpenUrlLinks: true,
 };
 let uiSettings = loadSettings();
@@ -52,40 +58,27 @@ function saveSettings() {
 
 function syncSettingsUi() {
   settingsUiSound.checked = uiSettings.uiSound;
-  settingsAmazon.checked = uiSettings.autoOpenAmazonLinks;
-  settingsUrl.checked = uiSettings.autoOpenUrlLinks;
+  if (settingsVoiceInput) settingsVoiceInput.checked = uiSettings.voiceInput;
+  if (settingsVoiceOutput) settingsVoiceOutput.checked = uiSettings.voiceOutput;
+  if (settingsUrl) settingsUrl.checked = uiSettings.autoOpenUrlLinks;
 }
 
 /* ── Markdown renderer ─────────────────────────────── */
 function renderMarkdown(text) {
   let html = escapeHtml(text);
 
-  // Code blocks: ```lang\ncode\n```
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
     const tag = lang ? `<span class="code-lang-tag">${lang}</span>` : "";
     return `<pre>${tag}<code>${code.trim()}</code></pre>`;
   });
 
-  // Inline code
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-
-  // Bold
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-
-  // Italic
   html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, "<em>$1</em>");
-
-  // Unordered lists
   html = html.replace(/^[-*] (.+)$/gm, "<li>$1</li>");
   html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
-
-  // Line breaks (outside of pre blocks)
   html = html.replace(/\n/g, "<br>");
-
-  // Clean up extra <br> in pre blocks
-  html = html.replace(/<pre>([\s\S]*?)<\/pre>/g, (match) => {
-    return match.replace(/<br>/g, "\n");
-  });
+  html = html.replace(/<pre>([\s\S]*?)<\/pre>/g, (match) => match.replace(/<br>/g, "\n"));
 
   return html;
 }
@@ -101,10 +94,6 @@ function scrollToBottom() {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-function wait(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
 /* ── Messages ──────────────────────────────────────── */
 function addMessage(role, content, options = {}) {
   const entry = document.createElement("article");
@@ -113,7 +102,7 @@ function addMessage(role, content, options = {}) {
 
   const label = document.createElement("span");
   label.className = "message-label";
-  label.textContent = role === "user" ? "DU" : role === "system" ? "SYSTEM" : "JARVIS";
+  label.textContent = role === "user" ? "YOU" : role === "system" ? "SYSTEM" : "JARVIS";
 
   const body = document.createElement("div");
   body.className = "message-body";
@@ -175,7 +164,7 @@ function addThinkingIndicator() {
 
   const body = document.createElement("div");
   body.className = "message-body message-body-thinking";
-  body.innerHTML = '<p>Denkt nach</p><span class="thinking-dots"><span></span><span></span><span></span></span>';
+  body.innerHTML = '<p>Thinking</p><span class="thinking-dots"><span></span><span></span><span></span></span>';
 
   entry.appendChild(label);
   entry.appendChild(body);
@@ -189,13 +178,13 @@ function setBusyState(busy) {
   commandInput.disabled = busy;
   submitButton.disabled = busy;
   submitButton.innerHTML = busy ? spinnerIcon : sendIcon;
-  commandMode.textContent = busy ? "PROCESSING" : "BEREIT";
+  commandMode.textContent = busy ? "PROCESSING" : "ONLINE";
   commandMode.classList.toggle("is-busy", busy);
 }
 
 function setMode(mode) {
   currentMode = mode;
-  modeChip.textContent = { standard: "Standard", dev: "Entwickler", business: "Business", hacker: "Hacker" }[mode] || mode;
+  modeChip.textContent = { standard: "Standard", dev: "Developer", creative: "Creative", analyst: "Analyst" }[mode] || mode;
   modeChip.dataset.mode = mode;
 
   document.querySelectorAll(".mode-btn").forEach((btn) => {
@@ -223,7 +212,7 @@ async function fetchJson(url, options) {
 async function loadSessionList() {
   try {
     const data = await fetchJson("/api/sessions");
-    renderSessionList(data.sessions || []);
+    renderSessionList(Array.isArray(data) ? data : []);
   } catch { /* ignore */ }
 }
 
@@ -232,7 +221,7 @@ function renderSessionList(sessions) {
   if (!sessions.length) {
     const hint = document.createElement("p");
     hint.className = "empty-hint";
-    hint.textContent = "Noch keine Chats.";
+    hint.textContent = "No chats yet.";
     chatList.appendChild(hint);
     return;
   }
@@ -244,25 +233,9 @@ function renderSessionList(sessions) {
 
     const title = document.createElement("span");
     title.className = "chat-item-title";
-    title.textContent = s.title;
-
-    const del = document.createElement("button");
-    del.className = "chat-item-delete";
-    del.textContent = "\u2715";
-    del.title = "Chat loeschen";
-    del.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      await fetch(`/api/sessions/${s.id}`, { method: "DELETE" });
-      if (s.id === currentSessionId) {
-        currentSessionId = null;
-        localStorage.removeItem(SESSION_KEY);
-        chatLog.replaceChildren();
-      }
-      loadSessionList();
-    });
+    title.textContent = s.id;
 
     item.appendChild(title);
-    item.appendChild(del);
     item.addEventListener("click", () => switchSession(s.id));
     chatList.appendChild(item);
   });
@@ -273,34 +246,24 @@ async function switchSession(sessionId) {
   currentSessionId = sessionId;
   localStorage.setItem(SESSION_KEY, sessionId);
   chatLog.replaceChildren();
-
-  try {
-    const data = await fetchJson(`/api/sessions/${sessionId}/messages`);
-    const messages = data.messages || [];
-    messages.forEach((msg) => {
-      if (msg.role === "system") return;
-      addMessage(msg.role === "assistant" ? "jarvis" : msg.role, msg.content, { markdown: msg.role === "assistant" });
-    });
-  } catch { /* ignore */ }
-
   loadSessionList();
 }
 
 async function createNewSession() {
-  currentSessionId = null;
-  localStorage.removeItem(SESSION_KEY);
+  currentSessionId = `session_${Date.now()}`;
+  localStorage.setItem(SESSION_KEY, currentSessionId);
   chatLog.replaceChildren();
-  addMessage("jarvis", "Neuer Chat gestartet. Schreib einfach los oder nutze `/help` fuer Befehle.", { markdown: true });
+  addMessage("jarvis", "New session started. Type a message or use `/help` for commands.", { markdown: true });
   renderQuickActions(getModeQuickActions());
   loadSessionList();
 }
 
 function getModeQuickActions() {
   const map = {
-    standard: ["Status", "Wetter in Berlin", "Wie spaet ist es?", "Rechne 12*12"],
-    dev: ["/search Node.js", "Erklaere async/await", "REST API generieren", "Code reviewen"],
-    business: ["Geschaeftsidee analysieren", "SWOT Analyse", "Plan erstellen", "Marktanalyse"],
-    hacker: ["Netzwerke erklaeren", "SQL Injection?", "Portscanner erklaeren", "HTTPS erklaeren"],
+    standard: ["System status", "What time is it?", "Tell me a joke", "Weather in London"],
+    dev: ["Explain async/await", "Generate REST API", "Review my code", "Debug this error"],
+    creative: ["Brainstorm ideas", "Write a story", "Design concepts", "Creative names"],
+    analyst: ["Analyze data", "SWOT analysis", "Create a plan", "Market research"],
   };
   return map[currentMode] || map.standard;
 }
@@ -327,164 +290,193 @@ async function submitMessage(message) {
       }),
     });
 
-    // Remove thinking indicator
     thinking.remove();
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let streamEl = null;
-    let fullText = "";
+    const contentType = res.headers.get("content-type") || "";
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    if (contentType.includes("text/event-stream")) {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let streamEl = null;
+      let fullText = "";
 
-      buffer += decoder.decode(value, { stream: true });
-      const events = buffer.split("\n\n");
-      buffer = events.pop();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      for (const event of events) {
-        const line = event.trim();
-        if (!line.startsWith("data: ")) continue;
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop();
 
-        let data;
-        try {
-          data = JSON.parse(line.slice(6));
-        } catch { continue; }
+        for (const event of events) {
+          const line = event.trim();
+          if (!line.startsWith("data: ")) continue;
 
-        if (data.type === "session") {
-          if (data.id && data.id !== currentSessionId) {
-            currentSessionId = data.id;
-            localStorage.setItem(SESSION_KEY, data.id);
-          }
-          if (data.mode) setMode(data.mode);
-          continue;
-        }
+          let data;
+          try { data = JSON.parse(line.slice(6)); } catch { continue; }
 
-        if (data.type === "token") {
-          if (!streamEl) {
-            streamEl = addStreamingMessage();
-          }
-          fullText += data.content;
-          // Render accumulated markdown
-          streamEl.body.innerHTML = renderMarkdown(fullText);
-          // Re-add cursor
-          const cursor = document.createElement("span");
-          cursor.className = "type-cursor";
-          cursor.textContent = "|";
-          streamEl.body.appendChild(cursor);
-          scrollToBottom();
-          continue;
-        }
-
-        if (data.type === "done") {
-          if (streamEl) {
-            streamEl.entry.classList.remove("streaming");
-            // Final render without cursor
+          if (data.token) {
+            if (!streamEl) streamEl = addStreamingMessage();
+            fullText += data.token;
             streamEl.body.innerHTML = renderMarkdown(fullText);
-            if (data.tokenCount) {
-              const info = document.createElement("div");
-              info.className = "token-info";
-              info.textContent = `${data.tokenCount} tokens · ${data.duration || 0}ms · ${data.model || ""}`;
-              streamEl.entry.appendChild(info);
+            const cursor = document.createElement("span");
+            cursor.className = "type-cursor";
+            cursor.textContent = "|";
+            streamEl.body.appendChild(cursor);
+            scrollToBottom();
+          }
+
+          if (data.done && streamEl) {
+            streamEl.entry.classList.remove("streaming");
+            streamEl.body.innerHTML = renderMarkdown(fullText);
+            if (data.full) {
+              streamEl.body.innerHTML = renderMarkdown(data.full);
             }
           }
-          if (data.quickActions) renderQuickActions(data.quickActions);
-          if (data.sessionId) {
-            currentSessionId = data.sessionId;
-            localStorage.setItem(SESSION_KEY, data.sessionId);
-          }
-          playUiBeep();
-          loadSessionList();
-          continue;
-        }
-
-        if (data.type === "command-result") {
-          // Legacy command response
-          const resp = data.response || {};
-          const content = resp.content || data.reply || "";
-          addMessage("jarvis", content, { markdown: true });
-          if (data.quickActions) renderQuickActions(data.quickActions);
-          if (data.status) updateStatus(data.status);
-          playUiBeep();
-          loadSessionList();
-          continue;
-        }
-
-        if (data.type === "mode-changed") {
-          setMode(data.mode);
-          addMessage("system", data.message);
-          if (data.quickActions) renderQuickActions(data.quickActions);
-          loadSessionList();
-          continue;
-        }
-
-        if (data.type === "clear") {
-          chatLog.replaceChildren();
-          addMessage("system", "Chat wurde geleert.");
-          continue;
-        }
-
-        if (data.type === "error") {
-          addMessage("jarvis", data.message || "Ein Fehler ist aufgetreten.");
-          continue;
         }
       }
+
+      if (!streamEl && fullText === "") {
+        addMessage("jarvis", "No response received.", { markdown: false });
+      }
+    } else {
+      const data = await res.json();
+      if (data.response) {
+        addMessage("jarvis", data.response, { markdown: true });
+      } else if (data.error) {
+        addMessage("jarvis", "Error: " + data.error);
+      }
     }
+
+    playUiBeep();
+    if (uiSettings.voiceOutput && fullText) speakText(fullText);
   } catch (err) {
     thinking.remove();
-    addMessage("jarvis", "Verbindungsfehler: " + err.message);
+    addMessage("jarvis", "Connection error: " + err.message);
   } finally {
     setBusyState(false);
     commandInput.focus();
   }
 }
 
-/* ── Status updates ────────────────────────────────── */
+/* ── Dashboard updates ────────────────────────────── */
 const statusFields = {
   time: document.getElementById("status-time"),
   date: document.getElementById("status-date"),
-  light: document.getElementById("status-light"),
-  focus: document.getElementById("status-focus"),
-  alarm: document.getElementById("status-alarm"),
-  result: document.getElementById("status-result"),
   ai: document.getElementById("status-ai"),
+  memory: document.getElementById("status-memory"),
+  plugins: document.getElementById("status-plugins"),
+  voice: document.getElementById("status-voice"),
+  tasks: document.getElementById("status-tasks"),
 };
 
-function updateStatus(status) {
-  if (statusFields.time) statusFields.time.textContent = status.time;
-  if (statusFields.date) statusFields.date.textContent = status.date;
-  if (statusFields.light) statusFields.light.textContent = status.lightsOn ? "An" : "Aus";
-  if (statusFields.focus) statusFields.focus.textContent = status.focusMode ? "Aktiv" : "Ruhig";
-  if (statusFields.alarm) statusFields.alarm.textContent = status.alarmArmed ? "Aktiv" : "Aus";
-  if (statusFields.result) statusFields.result.textContent = status.lastResult ?? "--";
+async function refreshDashboard() {
+  try {
+    const data = await fetchJson("/api/status");
+    if (data.modules) {
+      const ai = data.modules.ai;
+      if (ai && statusFields.ai) {
+        statusFields.ai.textContent = ai.available ? ai.provider : "Offline";
+        aiDot.classList.toggle("offline", !ai.available);
+      }
 
-  if (status.ai && statusFields.ai) {
-    statusFields.ai.textContent = status.ai.available ? status.ai.model : "Offline";
-    aiDot.classList.toggle("offline", !status.ai.available);
-  }
+      const mem = data.modules.memory;
+      if (mem && statusFields.memory) {
+        statusFields.memory.textContent = `${mem.facts || 0}F / ${mem.vectorEntries || 0}V`;
+      }
+
+      const plug = data.modules.plugins;
+      if (plug && statusFields.plugins) {
+        statusFields.plugins.textContent = `${plug.plugins || 0} loaded`;
+      }
+
+      const voice = data.modules.voice;
+      if (voice && statusFields.voice) {
+        statusFields.voice.textContent = voice.stt || voice.tts ? "Available" : "Offline";
+      }
+
+      const sched = data.modules.scheduler;
+      if (sched && statusFields.tasks) {
+        statusFields.tasks.textContent = `${sched.activeTasks || 0} active`;
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+async function refreshPlugins() {
+  if (!pluginList) return;
+  try {
+    const data = await fetchJson("/api/plugins");
+    pluginList.replaceChildren();
+    const plugins = Array.isArray(data) ? data : [];
+    if (plugins.length === 0) {
+      pluginList.innerHTML = '<div class="tele-mini-row"><span>None loaded</span></div>';
+      return;
+    }
+    plugins.forEach((p) => {
+      const row = document.createElement("div");
+      row.className = "tele-mini-row";
+      row.innerHTML = `<span>${p.name || p.id}</span><span>${p.enabled !== false ? "Active" : "Off"}</span>`;
+      pluginList.appendChild(row);
+    });
+  } catch { /* ignore */ }
 }
 
 function tickClock() {
   const now = new Date();
   if (statusFields.time) {
-    statusFields.time.textContent = now.toLocaleTimeString("de-DE", {
-      timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", second: "2-digit",
+    statusFields.time.textContent = now.toLocaleTimeString("en-US", {
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
     });
   }
   if (statusFields.date) {
-    statusFields.date.textContent = now.toLocaleDateString("de-DE", {
-      timeZone: "Europe/Berlin", weekday: "short", day: "2-digit", month: "short",
+    statusFields.date.textContent = now.toLocaleDateString("en-US", {
+      weekday: "short", day: "2-digit", month: "short",
     });
   }
 }
 
-async function refreshStatus() {
-  try {
-    const data = await fetchJson("/api/status");
-    if (data.status) updateStatus(data.status);
-  } catch { /* ignore */ }
+/* ── Voice I/O ─────────────────────────────────────── */
+function initVoiceInput() {
+  if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = "en-US";
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    commandInput.value = transcript;
+    submitMessage(transcript);
+    stopListening();
+  };
+
+  recognition.onerror = () => stopListening();
+  recognition.onend = () => stopListening();
+}
+
+function startListening() {
+  if (!recognition) initVoiceInput();
+  if (!recognition) return;
+  isListening = true;
+  voiceToggle.classList.add("active");
+  recognition.start();
+}
+
+function stopListening() {
+  isListening = false;
+  if (voiceToggle) voiceToggle.classList.remove("active");
+}
+
+function speakText(text) {
+  if (!("speechSynthesis" in window)) return;
+  const utterance = new SpeechSynthesisUtterance(text.slice(0, 500));
+  utterance.rate = 1.0;
+  utterance.pitch = 0.9;
+  speechSynthesis.speak(utterance);
 }
 
 /* ── Audio ──────────────────────────────────────────── */
@@ -545,17 +537,11 @@ newChatBtn.addEventListener("click", createNewSession);
 modeSelector.addEventListener("click", (e) => {
   const btn = e.target.closest(".mode-btn");
   if (!btn) return;
-  const mode = btn.dataset.mode;
-  setMode(mode);
-  // Send mode change to server if we have a session
-  if (currentSessionId) {
-    submitMessage(`/mode ${mode}`);
-  }
+  setMode(btn.dataset.mode);
+  renderQuickActions(getModeQuickActions());
 });
 
-sidebarToggle.addEventListener("click", () => {
-  sidebar.classList.toggle("is-open");
-});
+sidebarToggle.addEventListener("click", () => sidebar.classList.toggle("is-open"));
 
 settingsToggle.addEventListener("click", () => {
   settingsPanel.classList.toggle("is-open");
@@ -568,10 +554,17 @@ settingsClose.addEventListener("click", () => {
 });
 
 settingsUiSound.addEventListener("change", () => { uiSettings.uiSound = settingsUiSound.checked; saveSettings(); });
-settingsAmazon.addEventListener("change", () => { uiSettings.autoOpenAmazonLinks = settingsAmazon.checked; saveSettings(); });
-settingsUrl.addEventListener("change", () => { uiSettings.autoOpenUrlLinks = settingsUrl.checked; saveSettings(); });
+if (settingsVoiceInput) settingsVoiceInput.addEventListener("change", () => { uiSettings.voiceInput = settingsVoiceInput.checked; saveSettings(); });
+if (settingsVoiceOutput) settingsVoiceOutput.addEventListener("change", () => { uiSettings.voiceOutput = settingsVoiceOutput.checked; saveSettings(); });
+if (settingsUrl) settingsUrl.addEventListener("change", () => { uiSettings.autoOpenUrlLinks = settingsUrl.checked; saveSettings(); });
 
-// Close sidebar on mobile when clicking outside
+if (voiceToggle) {
+  voiceToggle.addEventListener("click", () => {
+    if (isListening) { stopListening(); recognition?.stop(); }
+    else startListening();
+  });
+}
+
 document.addEventListener("click", (e) => {
   if (window.innerWidth <= 960 && sidebar.classList.contains("is-open")) {
     if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
@@ -585,33 +578,18 @@ async function bootstrap() {
   syncSettingsUi();
   tickClock();
   setInterval(tickClock, 1000);
-  setInterval(refreshStatus, 5000);
+  setInterval(refreshDashboard, 5000);
+  setInterval(refreshPlugins, 15000);
 
+  await refreshDashboard();
+  await refreshPlugins();
   await loadSessionList();
-  await refreshStatus();
 
-  // If we have a saved session, load its messages
-  if (currentSessionId) {
-    try {
-      const data = await fetchJson(`/api/sessions/${currentSessionId}/messages`);
-      const messages = data.messages || [];
-      if (messages.length > 0) {
-        messages.forEach((msg) => {
-          if (msg.role === "system") return;
-          addMessage(msg.role === "assistant" ? "jarvis" : msg.role, msg.content, { markdown: msg.role === "assistant" });
-        });
-      } else {
-        addMessage("jarvis", "Jarvis v2 ist bereit. Schreib einfach los oder nutze `/help`.", { markdown: true });
-      }
-    } catch {
-      addMessage("jarvis", "Jarvis v2 ist bereit. Schreib einfach los oder nutze `/help`.", { markdown: true });
-    }
-  } else {
-    addMessage("jarvis", "Willkommen bei **Jarvis v2**. Schreib einfach los, wechsle den Modus in der Sidebar oder nutze `/help`.", { markdown: true });
-  }
-
+  addMessage("jarvis", "Welcome to **Jarvis v2.0** — your advanced AI assistant. Type a message, use voice input, or try `/help`.", { markdown: true });
   renderQuickActions(getModeQuickActions());
   commandInput.focus();
+
+  if (uiSettings.voiceInput) initVoiceInput();
 }
 
 bootstrap();

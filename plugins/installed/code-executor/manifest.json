@@ -1,0 +1,8 @@
+{
+  "id": "code-executor",
+  "name": "Code Executor",
+  "version": "1.0.0",
+  "description": "Safely execute JavaScript and Python code snippets in a sandboxed environment",
+  "author": "Jarvis",
+  "main": "index.js"
+}

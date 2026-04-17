@@ -1,0 +1,8 @@
+{
+  "id": "discord-bot",
+  "name": "Discord Bot",
+  "version": "1.0.0",
+  "description": "Discord bot integration - relay Jarvis capabilities to Discord channels",
+  "author": "Jarvis",
+  "main": "index.js"
+}
