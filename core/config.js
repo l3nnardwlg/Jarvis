@@ -1,4 +1,9 @@
+require('dotenv/config');
+
 const path = require('path');
+
+const API_KEY = process.env.API_KEY;
+const API_URL = process.env.API_URL;
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DATA_DIR = path.join(ROOT_DIR, 'data');
@@ -14,7 +19,16 @@ const config = {
   },
 
   ai: {
-    defaultProvider: process.env.AI_PROVIDER || 'ollama',
+    defaultProvider: process.env.AI_PROVIDER || 'jarvisapi',
+    jarvisapi: {
+      enabled: process.env.JARVIS_API_ENABLED !== 'false',
+      endpoint: process.env.JARVIS_API_ENDPOINT || API_URL || 'http://135.181.117.35:3000/chat',
+      apiKey: process.env.JARVIS_API_KEY || API_KEY || '123456789',
+      model: process.env.JARVIS_API_MODEL || 'jarvis-remote',
+      temperature: parseFloat(process.env.JARVIS_API_TEMPERATURE || '0.3'),
+      timeoutMs: parseInt(process.env.JARVIS_API_TIMEOUT_MS || '30000', 10),
+      healthTtlMs: parseInt(process.env.JARVIS_API_HEALTH_TTL_MS || '30000', 10),
+    },
     ollama: {
       enabled: process.env.OLLAMA_ENABLED !== 'false',
       endpoint: process.env.OLLAMA_ENDPOINT || 'http://localhost:11434',

@@ -24,7 +24,7 @@ class VoiceModule {
     this.sttAvailable = await stt.checkHealth();
     this.ttsAvailable = await tts.checkHealth();
 
-    log.info(`Voice initialized — STT: ${this.sttAvailable ? 'available' : 'offline'}, TTS: ${this.ttsAvailable ? 'available' : 'offline'}`);
+    log.info(`Voice initialized — browser wakeword is client-side, server STT: ${this.sttAvailable ? 'available' : 'offline'}, server TTS: ${this.ttsAvailable ? 'available' : 'offline'}`);
   }
 
   async transcribe(audioBuffer, options = {}) {

@@ -1,16 +1,17 @@
 const config = require('../core/config');
 const { logger } = require('../core/logger');
+const jarvisapi = require('./providers/jarvisapi');
 const ollama = require('./providers/ollama');
 const openai = require('./providers/openai');
 
 const log = logger.child('ai:router');
 
-const providers = { ollama, openai };
+const providers = { jarvisapi, ollama, openai };
 
 class AIRouter {
   constructor() {
     this.activeProvider = null;
-    this.fallbackOrder = ['ollama', 'openai'];
+    this.fallbackOrder = ['jarvisapi', 'ollama', 'openai'];
   }
 
   async init(engine) {

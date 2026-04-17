@@ -1,3 +1,5 @@
+require('dotenv/config');
+
 const { Engine } = require('./core/engine');
 const { logger } = require('./core/logger');
 const config = require('./core/config');
@@ -8,6 +10,7 @@ const { PluginLoader } = require('./plugins/loader');
 const { Scheduler } = require('./automation/scheduler');
 const { VoiceModule } = require('./voice/index');
 const { APIServer } = require('./api/server');
+const { CommandSystem } = require('./core/commands');
 
 const log = logger.child('main');
 
@@ -19,6 +22,7 @@ async function main() {
   const context = new ContextManager();
   const memory = new MemorySystem();
   const plugins = new PluginLoader();
+  const commands = new CommandSystem();
   const scheduler = new Scheduler();
   const voice = new VoiceModule();
   const api = new APIServer();
@@ -27,6 +31,7 @@ async function main() {
   engine.register('context', context);
   engine.register('memory', memory);
   engine.register('plugins', plugins);
+  engine.register('commands', commands);
   engine.register('scheduler', scheduler);
   engine.register('voice', voice);
   engine.register('api', api);
@@ -55,7 +60,7 @@ async function main() {
   AI:      ${ai.activeProvider || 'none'}
   Plugins: ${plugins.plugins?.size || 0} loaded
   Memory:  ${memory.vectorStore?.size() || 0} vectors
-  Voice:   STT ${voice.sttAvailable ? 'ON' : 'OFF'} | TTS ${voice.ttsAvailable ? 'ON' : 'OFF'}
+  Voice:   Browser wakeword client-side | Server STT ${voice.sttAvailable ? 'ON' : 'OFF'} | TTS ${voice.ttsAvailable ? 'ON' : 'OFF'}
   `);
 }
 

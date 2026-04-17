@@ -1,4 +1,4 @@
-const { sendJSON, sendSSE } = require('./server');
+const { sendJSON, sendSSE } = require('./helpers');
 const { detectIntent } = require('../ai/intent');
 const { logger } = require('../core/logger');
 
@@ -25,48 +25,93 @@ function createRouter(engine) {
     const ai = engine.get('ai');
     const context = engine.get('context');
     const memory = engine.get('memory');
+    const commands = engine.get('commands');
+    const plugins = engine.get('plugins');
 
     if (mode && context) context.setMode(sessionId, mode);
-
-    let memoryContext = '';
-    if (memory) {
-      memoryContext = await memory.getRelevantContext(message);
-    }
-
-    const messages = context
-      ? context.buildMessages(sessionId, message, { memoryContext })
-      : [{ role: 'user', content: message }];
-
     if (context) context.addMessage(sessionId, 'user', message);
 
-    if (!ai || !ai.provider) {
-      return sendJSON(res, { response: 'AI provider not available. Running in command-only mode.', provider: null });
-    }
-
-    try {
-      if (ai.activeProvider === 'ollama' && ai.provider.chatStream) {
-        sendSSE(res);
-        const stream = await ai.chatStream(messages);
-        let fullResponse = '';
-
-        for await (const chunk of stream) {
-          fullResponse += chunk.content;
-          res.write(`data: ${JSON.stringify({ token: chunk.content, done: chunk.done })}\n\n`);
+    // 1) Try legacy commands first (amazon, light, weather, calc, etc.)
+    if (commands) {
+      try {
+        const cmdResult = await commands.execute(message, memory?.longTerm || {});
+        if (cmdResult) {
+          const content = cmdResult.response?.content || cmdResult.content || JSON.stringify(cmdResult);
+          if (context) context.addMessage(sessionId, 'assistant', content);
+          return sendJSON(res, {
+            response: content,
+            type: cmdResult.response?.type || 'text',
+            quickActions: cmdResult.quickActions || [],
+            highlight: cmdResult.highlight || '',
+            links: cmdResult.links || [],
+            autoOpenLinks: cmdResult.autoOpenLinks || false,
+            provider: 'command',
+          });
         }
-
-        res.write(`data: ${JSON.stringify({ done: true, full: fullResponse })}\n\n`);
-        res.end();
-
-        if (context) context.addMessage(sessionId, 'assistant', fullResponse);
-      } else {
-        const result = await ai.chat(messages);
-        if (context) context.addMessage(sessionId, 'assistant', result.content);
-        sendJSON(res, { response: result.content, provider: result.provider, model: result.model });
+      } catch (err) {
+        log.warn('Legacy command error', { error: err.message });
       }
-    } catch (err) {
-      log.error('Chat error', { error: err.message });
-      sendJSON(res, { error: err.message }, 500);
     }
+
+    // 2) Try plugin commands (match by first word)
+    if (plugins) {
+      const firstWord = message.trim().split(/\s+/)[0].toLowerCase();
+      const pluginCmd = plugins.getCommand(firstWord);
+      if (pluginCmd && pluginCmd.run) {
+        try {
+          const args = message.trim().split(/\s+/).slice(1);
+          const result = await pluginCmd.run(args);
+          const content = result?.content || result?.title || JSON.stringify(result);
+          if (context) context.addMessage(sessionId, 'assistant', content);
+          return sendJSON(res, { response: content, type: result?.type || 'text', provider: 'plugin' });
+        } catch (err) {
+          log.warn('Plugin command error', { error: err.message });
+        }
+      }
+    }
+
+    // 3) Try AI if available
+    if (ai && ai.provider) {
+      let memoryContext = '';
+      if (memory) {
+        memoryContext = await memory.getRelevantContext(message);
+      }
+
+      const messages = context
+        ? context.buildMessages(sessionId, message, { memoryContext })
+        : [{ role: 'user', content: message }];
+
+      try {
+        if (ai.activeProvider === 'ollama' && ai.provider.chatStream) {
+          sendSSE(res);
+          const stream = await ai.chatStream(messages);
+          let fullResponse = '';
+
+          for await (const chunk of stream) {
+            fullResponse += chunk.content;
+            res.write(`data: ${JSON.stringify({ token: chunk.content, done: chunk.done })}\n\n`);
+          }
+
+          res.write(`data: ${JSON.stringify({ done: true, full: fullResponse })}\n\n`);
+          res.end();
+
+          if (context) context.addMessage(sessionId, 'assistant', fullResponse);
+          return;
+        } else {
+          const result = await ai.chat(messages);
+          if (context) context.addMessage(sessionId, 'assistant', result.content);
+          return sendJSON(res, { response: result.content, provider: result.provider, model: result.model });
+        }
+      } catch (err) {
+        log.error('AI chat error', { error: err.message });
+      }
+    }
+
+    // 4) Fallback — no command matched, no AI available
+    sendJSON(res, {
+      response: 'I couldn\'t find a matching command and no AI model is connected. Try commands like: "weather in London", "what time is it", "calculate 5*5", or connect an AI model (Ollama/OpenAI).',
+      provider: null,
+    });
   });
 
   // --- Command execution ---

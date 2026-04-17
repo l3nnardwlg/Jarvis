@@ -21,6 +21,13 @@ const settingsUrl = document.getElementById("setting-auto-open-url");
 const voiceToggle = document.getElementById("voice-toggle");
 const aiDot = document.getElementById("ai-dot");
 const pluginList = document.getElementById("plugin-list");
+const appLayout = document.getElementById("app-layout");
+const wakeupScreen = document.getElementById("wakeup-screen");
+const wakeupButton = document.getElementById("wakeup-button");
+const wakeupTitle = document.getElementById("wakeup-title");
+const wakeupSubtitle = document.getElementById("wakeup-subtitle");
+const wakeupStatus = document.getElementById("wakeup-status");
+const wakeupIndicator = document.getElementById("wakeup-indicator");
 
 const sendIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>';
 const spinnerIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>';
@@ -34,6 +41,10 @@ let currentMode = "standard";
 let audioContext = null;
 let isListening = false;
 let recognition = null;
+let wakeState = "offline";
+let wakeBootTimer = null;
+
+const WAKE_WORDS = ["wakeup", "jarvis"];
 
 const historyState = { entries: [], index: -1, draft: "" };
 
@@ -92,6 +103,71 @@ function escapeHtml(text) {
 /* ── Helpers ────────────────────────────────────────── */
 function scrollToBottom() {
   chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function setWakePresentation(state, statusText, subtitleText) {
+  wakeState = state;
+
+  if (commandMode) {
+    commandMode.textContent = state === "online" ? "ONLINE" : state === "listening" ? "LISTENING" : "OFFLINE";
+    commandMode.classList.toggle("is-busy", state === "booting");
+  }
+
+  if (aiDot) {
+    aiDot.classList.toggle("offline", state !== "online");
+  }
+
+  if (wakeupTitle) {
+    wakeupTitle.textContent = state === "online" ? "Jarvis online" : state === "booting" ? "Booting Jarvis" : "Jarvis offline";
+  }
+
+  if (wakeupStatus && statusText) {
+    wakeupStatus.textContent = statusText;
+  }
+
+  if (wakeupSubtitle && subtitleText) {
+    wakeupSubtitle.innerHTML = subtitleText;
+  }
+
+  if (wakeupIndicator) {
+    wakeupIndicator.classList.remove("is-offline", "is-listening", "is-online");
+    wakeupIndicator.classList.add(
+      state === "online" ? "is-online" : state === "listening" || state === "booting" ? "is-listening" : "is-offline"
+    );
+  }
+
+  if (voiceToggle) {
+    voiceToggle.classList.toggle("active", state === "listening");
+  }
+}
+
+function unlockJarvis() {
+  setWakePresentation("online", "System aktiv", "Sprich mit Jarvis oder tippe direkt in den Chat.");
+  document.body.classList.remove("is-booting");
+  wakeupScreen?.classList.add("is-hidden");
+  appLayout?.classList.remove("app-layout-hidden");
+  appLayout?.classList.add("app-layout-awake");
+  renderQuickActions(getModeQuickActions());
+  addMessage("jarvis", "Wakeword erkannt. **Jarvis online.** Wie kann ich helfen?", { markdown: true });
+  commandInput.focus();
+}
+
+function startJarvis() {
+  if (wakeState === "online" || wakeState === "booting") return;
+
+  window.clearTimeout(wakeBootTimer);
+  document.body.classList.add("is-booting");
+  setWakePresentation("booting", "Wakeword erkannt", "Systeme werden hochgefahren. Chat-Schnittstelle wird freigegeben.");
+  playUiBeep();
+
+  wakeBootTimer = window.setTimeout(() => {
+    unlockJarvis();
+  }, 950);
+}
+
+function detectWakeWord(text) {
+  const transcript = String(text || "").toLowerCase();
+  return WAKE_WORDS.some((word) => transcript.includes(word));
 }
 
 /* ── Messages ──────────────────────────────────────── */
@@ -270,6 +346,8 @@ function getModeQuickActions() {
 
 /* ── Streaming chat ────────────────────────────────── */
 async function submitMessage(message) {
+  if (wakeState !== "online") return;
+
   const trimmed = String(message || "").trim();
   if (!trimmed) return;
 
@@ -280,6 +358,8 @@ async function submitMessage(message) {
   const thinking = addThinkingIndicator();
 
   try {
+    let fullText = "";
+
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -299,7 +379,6 @@ async function submitMessage(message) {
       const decoder = new TextDecoder();
       let buffer = "";
       let streamEl = null;
-      let fullText = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -343,6 +422,7 @@ async function submitMessage(message) {
     } else {
       const data = await res.json();
       if (data.response) {
+        fullText = data.response;
         addMessage("jarvis", data.response, { markdown: true });
       } else if (data.error) {
         addMessage("jarvis", "Error: " + data.error);
@@ -378,7 +458,7 @@ async function refreshDashboard() {
       const ai = data.modules.ai;
       if (ai && statusFields.ai) {
         statusFields.ai.textContent = ai.available ? ai.provider : "Offline";
-        aiDot.classList.toggle("offline", !ai.available);
+        aiDot.classList.toggle("offline", wakeState !== "online" || !ai.available);
       }
 
       const mem = data.modules.memory;
@@ -441,34 +521,74 @@ function tickClock() {
 function initVoiceInput() {
   if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) return;
 
+  if (recognition) return;
+
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = false;
-  recognition.lang = "en-US";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = "de-DE";
 
   recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
+    const result = event.results[event.results.length - 1];
+    const transcript = result?.[0]?.transcript || "";
+
+    if (wakeState !== "online") {
+      if (detectWakeWord(transcript)) {
+        startJarvis();
+      } else {
+        setWakePresentation("listening", "Standby hört zu", 'Warte auf <strong>"wakeup"</strong> oder <strong>"jarvis"</strong>.');
+      }
+      return;
+    }
+
+    if (!result?.isFinal) return;
+
     commandInput.value = transcript;
     submitMessage(transcript);
-    stopListening();
   };
 
-  recognition.onerror = () => stopListening();
-  recognition.onend = () => stopListening();
+  recognition.onerror = () => {
+    isListening = false;
+    if (wakeState !== "online") {
+      setWakePresentation("offline", "Mikrofon blockiert", "Erlaube Mikrofonzugriff und starte den Wake Listener erneut.");
+    }
+  };
+
+  recognition.onend = () => {
+    if (!isListening) return;
+
+    try {
+      recognition.start();
+    } catch {
+      setWakePresentation(wakeState === "online" ? "online" : "listening", wakeState === "online" ? "Sprachmodus aktiv" : "Standby hört zu");
+    }
+  };
 }
 
 function startListening() {
   if (!recognition) initVoiceInput();
   if (!recognition) return;
+
+  if (isListening) return;
+
   isListening = true;
-  voiceToggle.classList.add("active");
-  recognition.start();
+  if (wakeState !== "online") {
+    setWakePresentation("listening", "Standby hört zu", 'Warte auf <strong>"wakeup"</strong> oder <strong>"jarvis"</strong>.');
+  }
+
+  try {
+    recognition.start();
+  } catch {}
 }
 
 function stopListening() {
   isListening = false;
   if (voiceToggle) voiceToggle.classList.remove("active");
+
+  if (wakeState !== "online") {
+    setWakePresentation("offline", "Mikrofon im Standby", 'Sag <strong>"wakeup"</strong> oder <strong>"jarvis"</strong>, um das System zu aktivieren.');
+  }
 }
 
 function speakText(text) {
@@ -560,9 +680,17 @@ if (settingsUrl) settingsUrl.addEventListener("change", () => { uiSettings.autoO
 
 if (voiceToggle) {
   voiceToggle.addEventListener("click", () => {
-    if (isListening) { stopListening(); recognition?.stop(); }
-    else startListening();
+    if (isListening) {
+      stopListening();
+      recognition?.stop();
+    } else {
+      startListening();
+    }
   });
+}
+
+if (wakeupButton) {
+  wakeupButton.addEventListener("click", () => startListening());
 }
 
 document.addEventListener("click", (e) => {
@@ -585,11 +713,12 @@ async function bootstrap() {
   await refreshPlugins();
   await loadSessionList();
 
-  addMessage("jarvis", "Welcome to **Jarvis v2.0** — your advanced AI assistant. Type a message, use voice input, or try `/help`.", { markdown: true });
-  renderQuickActions(getModeQuickActions());
-  commandInput.focus();
+  setWakePresentation("offline", "Mikrofon im Standby", 'Sag <strong>"wakeup"</strong> oder <strong>"jarvis"</strong>, um das System zu aktivieren.');
+  initVoiceInput();
 
-  if (uiSettings.voiceInput) initVoiceInput();
+  if (uiSettings.voiceInput) {
+    startListening();
+  }
 }
 
 bootstrap();

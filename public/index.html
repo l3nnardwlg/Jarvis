@@ -12,6 +12,24 @@
     <div class="bg-glow" aria-hidden="true"></div>
     <div class="scanlines" aria-hidden="true"></div>
 
+    <section id="wakeup-screen" class="wakeup-screen" aria-live="polite">
+      <div class="wakeup-shell">
+        <div class="wakeup-reactor" aria-hidden="true">
+          <div class="wakeup-reactor-ring wakeup-reactor-ring-a"></div>
+          <div class="wakeup-reactor-ring wakeup-reactor-ring-b"></div>
+          <div class="wakeup-reactor-core"></div>
+        </div>
+        <p class="wakeup-kicker">VOICE STANDBY</p>
+        <h1 id="wakeup-title" class="wakeup-title">Jarvis offline</h1>
+        <p id="wakeup-subtitle" class="wakeup-subtitle">Sag <strong>"wakeup"</strong> oder <strong>"jarvis"</strong>, um das System zu aktivieren.</p>
+        <div class="wakeup-status-row">
+          <span id="wakeup-indicator" class="wakeup-indicator is-offline"></span>
+          <span id="wakeup-status" class="wakeup-status">Mikrofon im Standby</span>
+        </div>
+        <button id="wakeup-button" class="wakeup-button" type="button">Wake listener starten</button>
+      </div>
+    </section>
+
     <!-- Settings drawer -->
     <aside id="settings-panel" class="settings-drawer" aria-hidden="true">
       <div class="drawer-head">
@@ -42,7 +60,7 @@
     </aside>
 
     <!-- App layout -->
-    <div class="app-layout">
+    <div id="app-layout" class="app-layout app-layout-hidden">
 
       <!-- Sidebar -->
       <aside class="sidebar" id="sidebar">
